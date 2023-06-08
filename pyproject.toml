@@ -19,7 +19,7 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.7"
+python = ">=3.8"
 jinja2 = "^3"
 
 [tool.poetry.scripts]
@@ -31,9 +31,11 @@ ruff  = "^0.0.272"
 black = "^23.3.0"
 
 [tool.black]
-target-version = ['py37']
+target-version = ['py38']
 
 [tool.ruff]
+target-version = "py38"
+
 # Enable flake8-print, isort, pyflakes, pydocstyle, pycodestyle, flynt, ruff
 select  = ["T", "I", "F", "D", "E", "W", "FLY", "RUF", "PL"]
 fixable = ["I"]
@@ -55,9 +57,6 @@ ignore = [
 
 # Same as Black.
 line-length = 88
-
-# Assume Python 3.10.
-target-version = "py37"
 
 # Allow unused variables when underscore-prefixed or of form `dummyN`.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|dummy\\d*)$"
