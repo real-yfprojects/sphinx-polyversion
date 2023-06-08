@@ -1,0 +1,63 @@
+[build-system]
+requires      = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "sphinx_polyversion"
+version = "0.0.1"
+description = "Build multiple versions of your sphinx docs and merge them into one website."
+authors = ["yfprojects <real-yfprojects@users.noreply.github.com>"]
+license = "MIT"
+repository = "https://github.com/real-yfprojects/sphinx-polyversion"
+keywords = ["utils", "documentation", "sphinx"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.7",
+    "Intended Audience :: Developers",
+]
+
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+jinja2 = "^3"
+
+[tool.poetry.scripts]
+# sphinx_polyversion = "sphinx_polyversion:run"
+
+[tool.poetry.group.lint.dependencies]
+mypy  = "^1.3.0"
+ruff  = "^0.0.272"
+black = "^23.3.0"
+
+[tool.black]
+target-version = ['py37']
+
+[tool.ruff]
+# Enable flake8-print, isort, pyflakes, pydocstyle, pycodestyle, flynt, ruff
+select  = ["T", "I", "F", "D", "E", "W", "FLY", "RUF", "PL"]
+fixable = ["I"]
+
+ignore = [
+    # pydocstyle
+    # "D202", # no-blank-line-after-function
+    "D203", # one-blank-line-before-class
+    # "D205", # blank-line-after-summary
+    "D212", # multi-line-summary-first-line
+    # "D401", # non-imperative-mood
+    # pycodestyle
+    "E501", # line-too-long
+    # pylint
+    # "PLR0913", # too-many-arguments
+    # "PLR0912", # too-many-branches
+    # "PLR0915", # too-many-statements
+]
+
+# Same as Black.
+line-length = 88
+
+# Assume Python 3.10.
+target-version = "py37"
+
+# Allow unused variables when underscore-prefixed or of form `dummyN`.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|dummy\\d*)$"
