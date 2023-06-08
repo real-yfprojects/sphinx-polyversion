@@ -33,6 +33,12 @@ black = "^23.3.0"
 [tool.black]
 target-version = ['py38']
 
+[tool.mypy]
+files              = "sphinx_polyversion/**.py"
+python_version     = "3.8"
+strict             = true
+allow_redefinition = true
+
 [tool.ruff]
 target-version = "py38"
 

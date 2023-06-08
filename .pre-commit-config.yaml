@@ -64,6 +64,13 @@ repos:
     hooks:
       - id: black
 
+  # Static type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.3.0
+    hooks:
+      - id: mypy
+        args: [--ignore-missing-imports]
+
   # format many other files with prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: "6fd1ced85fc139abd7f5ab4f3d78dab37592cd5e" # frozen: v3.0.0-alpha.9-for-vscode
