@@ -1,0 +1,97 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: f71fa2c1f9cf5cb705f73dffe4b21f7c61470ba9 # frozen: v4.4.0
+    hooks:
+      # check file system problems
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: destroyed-symlinks
+
+      # unify whitespace and line ending
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+
+      # sort requirements.txt files
+      - id: requirements-txt-fixer
+
+      # check more
+      - id: check-yaml
+      - id: check-toml
+      - id: check-xml
+      - id: check-executables-have-shebangs
+      - id: check-merge-conflict
+
+  - repo: https://github.com/python-poetry/poetry
+    rev: "cacd43c076748411a759c65dd46858cd8b7ef3b3" # frozen: 1.5.0
+    hooks:
+      - id: poetry-check
+      - id: poetry-lock
+        args: ["--no-update"]
+
+  - repo: https://github.com/floatingpurr/sync_with_poetry
+    rev: 97df83483a2460fbb130270664c2652b683bd1ed # frozen: 1.0.0
+    hooks:
+      - id: sync_with_poetry
+        files: ^\.pre-commit-config\.yaml|poetry\.lock$
+        pass_filenames: false
+        args:
+          - "poetry.lock"
+          - "--db"
+          - "swp.json"
+
+  # Enforce frozen revisions in `.pre-commit-config.yaml`
+  - repo: https://github.com/real-yfprojects/check-pre-commit-config
+    rev: 27c71bd46101a7de517863033531963b7d04dee2 # frozen: v1.0.0-alpha3
+    hooks:
+      - id: check-frozen
+        args:
+          - "--rules"
+          - "ycamte"
+          - "--fix-all"
+
+  # Lint python code with ruff (also sorts imports)
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.0.272"
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+  # Format python code with black
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+
+  # format many other files with prettier
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "6fd1ced85fc139abd7f5ab4f3d78dab37592cd5e" # frozen: v3.0.0-alpha.9-for-vscode
+    hooks:
+      - id: prettier
+        exclude: ^docs/source/(_polyversion/|_)templates/
+
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: b752273289ecf6d81dbbe6fc8284f2689ef8514d # frozen: v0.13
+    hooks:
+      - id: validate-pyproject
+        files: pyproject.toml$
+
+# configuration for the pre-commit.ci bot
+# only relevant when actually using the bot
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci, https://pre-commit.com and
+    the `.pre-commit-config.yaml` file in this repository.
+
+  autofix_prs: true # default
+  autoupdate_branch: "develop"
+  autoupdate_commit_msg: |
+    [pre-commit.ci] Autoupdate pre-commit hook versions.
+
+    for more information, see https://pre-commit.ci, https://pre-commit.com and
+    the `.pre-commit-config.yaml` file in this repository.
+
+  submodules: false # default
