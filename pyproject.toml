@@ -42,9 +42,34 @@ allow_redefinition = true
 [tool.ruff]
 target-version = "py38"
 
-# Enable flake8-print, isort, pyflakes, pydocstyle, pycodestyle, flynt, ruff
-select  = ["T", "I", "F", "D", "E", "W", "FLY", "RUF", "PL"]
-fixable = ["I"]
+select = [
+    "T",     # flake8-print
+    "I",     # isort
+    "F",     # pyflakes
+    "D",     # pydocstyle
+    "E",     # pycodestyle
+    "W",
+    "FLY",   # flynt
+    "RUF",   # ruff
+    "PL",    # pylint
+    "TCH",   # flake8-type-checking
+    "ASYNC", # flake8-async
+    "A",     # flake8-builtins
+    "C",     # flake8-comprehensions
+    "FA",    # flake8-future-annotations
+    "ISC",   # flake8-implicit-str-concat
+    "G",     # flake8-implicit-str-concat
+    "INP",   # flake8-no-pep420
+    "PT",    # flake8-pytest-style
+    "RSE",   # flake8-raise
+    "RET",   # flake8-return
+    "SIM",   # flake8-simplify
+    "PTH",   # flake8-use-pathlib
+    "TD",    # flake8-todos
+    "PYI",   # flake8-pyi - lints .pyi type stubs
+    "ERA",   # ERA
+]
+unfixable = ['ERA']
 
 ignore = [
     # pydocstyle
@@ -59,6 +84,8 @@ ignore = [
     # "PLR0913", # too-many-arguments
     # "PLR0912", # too-many-branches
     # "PLR0915", # too-many-statements
+    # flake8-todos
+    "TD002", # missing author
 ]
 
 # Same as Black.
