@@ -1,0 +1,58 @@
+from __future__ import annotations
+
+import asyncio
+from logging import getLogger
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Tuple,
+    TypeVar,
+    cast,
+)
+
+from sphinx_polyversion.log import ContextAdapter
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+
+class Environment:
+    path: Path
+
+    def __init__(self, path: Path, name: str):
+        self.path = path.resolve()
+        self.logger = ContextAdapter(getLogger(__name__), {"context": name})
+
+    async def __aenter__(self: ENV) -> ENV:
+        return self
+
+    async def __aexit__(self, *exc_info) -> bool | None:  # type: ignore[no-untyped-def]
+        return None
+
+    async def run(
+        self, *cmd: str, decode: bool = True, **kwargs: Any
+    ) -> Tuple[str | bytes | None, str | bytes | None, int]:
+        """
+        Run a OS process in the environment.
+
+        This implementation passes the arguments to
+        :func:`asyncio.create_subprocess_exec`.
+
+        Returns
+        -------
+        stdout : str | None
+            The output of the command,
+        stderr : str | None
+            The error output of the command
+        returncode : int | None
+            The returncode of the command
+        """
+        process = await asyncio.create_subprocess_exec(*cmd, **kwargs)
+        out, err = await process.communicate()
+        if decode:
+            out = out.decode() if out is not None else None  # type: ignore[assignment]
+            err = err.decode() if err is not None else None  # type: ignore[assignment]
+        return out, err, cast(int, process.returncode)
+
+
+ENV = TypeVar("ENV", bound=Environment)
