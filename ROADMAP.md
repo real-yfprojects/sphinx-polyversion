@@ -1,19 +1,23 @@
 # 0.1.0
 
-- [ ] Abstract Architecture
-- [ ] Default Driver
-- [ ] Default Builder
-- [ ] Default Data for builder
+- [x] Abstract Architecture
+- [x] Default Driver
+- [x] Command Builder
+- [x] Sphinx Builder
 - [x] PIP Environment
 - [x] POETRY Environment
 - [x] GIT Provider
-- [ ] Implement API for conf.py
-  - [ ] Provide data class for use in conf.py
-  - [ ] Load values
+- [x] Implement API for conf.py
+  - [x] Provide data class for use in conf.py
+  - [x] Load values
 
 # 0.2.0
 
+- [ ] Docstrings
 - [ ] Tests for 0.1.0
+- [ ] NoneEnvironment (doesn't do anything)
+- [ ] Venv support
+- [ ] Virtualenv support
 - [ ] Implement API for polyconf.py
   - [ ] Basic configuration
 
@@ -23,6 +27,7 @@
 - [ ] Extend API for polyconf.py
   - [ ] Override conf values
   - [ ] Provide values for conf
+  - [ ] custom data -> custom decoder, encoder
 
 # 0.4.0
 
@@ -31,6 +36,7 @@
   - [ ] Helpers for dynamic build paths
   - [ ] Helper for custom build command
   - [ ] Helpers for custom subclasses
+- [ ] Extend API for conf.py with qualitiy of life improvements
 
 # 1.0.0-alpha1
 
@@ -39,7 +45,7 @@
 - [ ] README
 - [ ] Easily build local version and mocking
 
-# Future
+# 1.0.0
 
 - [ ] Contributing Standards
 - [ ] Extensive Documentation
@@ -52,8 +58,6 @@
 - [ ] CI
 - [ ] Docs on Github Pages
 
-# 1.0.0
-
 - [ ] PyPi package
 
 # 1.1.0
@@ -62,3 +66,7 @@
 - [ ] Easy integration with ci
 - [ ] Github Action
 - [ ] Multiprocessing
+
+# Future
+
+Nothing planned yet
