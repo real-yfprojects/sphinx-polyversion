@@ -11,12 +11,15 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    Sequence,
     Tuple,
     cast,
 )
+from venv import EnvBuilder
 
 from sphinx_polyversion.builder import BuildError
 from sphinx_polyversion.environment import Environment
+from sphinx_polyversion.utils import to_thread
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -26,12 +29,50 @@ if TYPE_CHECKING:
 logger = getLogger(__name__)
 
 
-class VenvWrapper:
-    pass  # TODO: Implement wrapper around venv
+class VenvWrapper(EnvBuilder):
+    """Build your virtual environments using the build-in venv module."""
+
+    async def __call__(self, path: Path) -> None:
+        """
+        Create a virtual environment at the given location.
+
+        This runs `self.create` in a separate thread that can be awaited.
+
+        Parameters
+        ----------
+        path : Path
+            directory for the created venv
+        """
+        await to_thread(self.create, path)
 
 
 class VirtualenvWrapper:
-    pass  # TODO: Implement wrapper around virtualvenv
+    """
+    Build your virtual environments using the virtualenv package.
+
+    The package can be found on pypi.
+    Call instances of this class with a path to create a venv at the given location.
+    """
+
+    def __init__(self, args: Sequence[str]) -> None:
+        """
+        Build your virtual environments using the virtualenv package.
+
+        Parameters
+        ----------
+        args : Sequence[str]
+            Commandline arguments to pass to `virtualenv`.
+        """
+        self.args = args
+
+        # check that virtualenv is installed
+        import virtualenv  # noqa: F401
+
+    async def __call__(self, path: Path) -> None:
+        """Build the venv at the given location in a separate thread."""
+        from virtualenv import cli_run
+
+        await to_thread(cli_run, [*self.args, path])
 
 
 class VirtualPythonEnvironment(Environment):
@@ -45,12 +86,12 @@ class VirtualPythonEnvironment(Environment):
     ):
         super().__init__(path, name)
         self.venv = venv.resolve()
-        self.creator = creator
+        self._creator = creator
 
     async def create_venv(self) -> None:
-        logger.info("Creating venv...")
-        if self.creator:
-            result = self.creator(self.venv)
+        if self._creator:
+            logger.info("Creating venv...")
+            result = self._creator(self.venv)
             if isawaitable(result):
                 await result
 
@@ -84,7 +125,7 @@ class VirtualPythonEnvironment(Environment):
             The returncode of the command
         """
         # activate venv
-        kwargs["env"] = self.activate(kwargs.get("env", os.environ.copy()))
+        kwargs["env"] = self.activate(kwargs.get("env", os.environ).copy())
         return await super().run(*cmd, **kwargs)
 
 

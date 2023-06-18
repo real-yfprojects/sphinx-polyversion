@@ -19,8 +19,12 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.8"
-jinja2 = "^3"
+virtualenv = { version = "^20", optional = true }
+python     = ">=3.8"
+jinja2     = "^3"
+
+[tool.poetry.extras]
+virtualenv = ["virtualenv"]
 
 [tool.poetry.scripts]
 # sphinx_polyversion = "sphinx_polyversion:run"
@@ -38,6 +42,10 @@ files              = "sphinx_polyversion/**.py"
 python_version     = "3.8"
 strict             = true
 allow_redefinition = true
+
+[[tool.mypy.overrides]]
+module                 = "virtualenv.*"
+ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py38"
