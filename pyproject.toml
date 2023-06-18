@@ -93,3 +93,7 @@ line-length = 88
 
 # Allow unused variables when underscore-prefixed or of form `dummyN`.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|dummy\\d*)$"
+
+[tool.ruff.pylint]
+# Allow more arguments for complexity check
+max-args = 8
