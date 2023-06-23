@@ -4,6 +4,7 @@
 - [x] Default Driver
 - [x] Command Builder
 - [x] Sphinx Builder
+- [x] NoneEnvironment (doesn't do anything)
 - [x] PIP Environment
 - [x] POETRY Environment
 - [x] GIT Provider
@@ -13,11 +14,12 @@
 
 # 0.2.0
 
-- [ ] Docstrings
+- [x] Docstrings
 - [ ] Tests for 0.1.0
-- [ ] NoneEnvironment (doesn't do anything)
-- [ ] Venv support
-- [ ] Virtualenv support
+- [x] Venv support
+- [x] Virtualenv support
+- [x] Implement root render
+- [ ] SWP pre-commit hook
 - [ ] Implement API for polyconf.py
   - [ ] Basic configuration
 
