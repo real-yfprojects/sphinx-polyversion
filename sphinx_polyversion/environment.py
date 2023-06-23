@@ -1,3 +1,5 @@
+"""Build Environment Base API."""
+
 from __future__ import annotations
 
 import asyncio
@@ -17,16 +19,47 @@ if TYPE_CHECKING:
 
 
 class Environment:
+    """
+    A build environment and contextmanager to run commands in.
+
+    This is a base class but it can be instanciated as well to have a
+    environment that does nothing.
+
+    Parameters
+    ----------
+    path : Path
+        The location of the current revision.
+    name : str
+        The name of the environment (usually the name of the current revision).
+
+    Methods
+    -------
+    run(*cmd: str, decode: bool = True, **kwargs: Any)
+        Run a OS process in the environment.
+    """
+
     path: Path
 
     def __init__(self, path: Path, name: str):
+        """
+        Init the build environment and contextmanager to run commands in.
+
+        Parameters
+        ----------
+        path : Path
+            The location of the current revision.
+        name : str
+            The name of the environment (usually the name of the current revision).
+        """
         self.path = path.resolve()
         self.logger = ContextAdapter(getLogger(__name__), {"context": name})
 
     async def __aenter__(self: ENV) -> ENV:
+        """Set the environment up."""
         return self
 
     async def __aexit__(self, *exc_info) -> bool | None:  # type: ignore[no-untyped-def]
+        """Clean the environment up."""
         return None
 
     async def run(

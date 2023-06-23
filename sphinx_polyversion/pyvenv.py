@@ -1,3 +1,5 @@
+"""Subclasses of :class:`Environment` supporting python virtual environments."""
+
 from __future__ import annotations
 
 import asyncio
@@ -76,6 +78,37 @@ class VirtualenvWrapper:
 
 
 class VirtualPythonEnvironment(Environment):
+    """
+    An environment for running build commands in a python virtual environment.
+
+    If you want to create the venv when this environment is entered you can
+    provide a `creator` which will be called with the `venv` location to create
+    the environment. You can use the :class:`VenvWrapper` and
+    :class:`VirtualenvWrapper` classes for that.
+    If `creator` isn't provided it is expected that a python venv already exists
+    at the given location.
+
+    Parameters
+    ----------
+    path : Path
+        The location of the current revision.
+    name : str
+        The name of the environment (usually the name of the current revision).
+    venv : Path
+        The path of the python venv.
+    creator : Callable[[Path], Any], optional
+        A callable for creating the venv, by default None
+
+    Attributes
+    ----------
+    path : Path
+        The location of the current revision.
+    name : str
+        The name of the environment.
+    venv : Path
+        The path of the python venv.
+    """
+
     def __init__(
         self,
         path: Path,
@@ -84,11 +117,32 @@ class VirtualPythonEnvironment(Environment):
         *,
         creator: Callable[[Path], Any] | None = None,
     ):
+        """
+        Environment for building inside a python virtual environment.
+
+        Parameters
+        ----------
+        path : Path
+            The location of the current revision.
+        name : str
+            The name of the environment (usually the name of the current revision).
+        venv : Path
+            The path of the python venv.
+        creator : Callable[[Path], Any], optional
+            A callable for creating the venv, by default None
+        """
         super().__init__(path, name)
         self.venv = venv.resolve()
         self._creator = creator
 
     async def create_venv(self) -> None:
+        """
+        Create the virtual python environment.
+
+        This calls `creator` if provided otherwise it does nothing.
+
+        Override this to customize how and when the venv is created.
+        """
         if self._creator:
             logger.info("Creating venv...")
             result = self._creator(self.venv)
@@ -96,12 +150,28 @@ class VirtualPythonEnvironment(Environment):
                 await result
 
     async def __aenter__(self: Self) -> Self:
+        """Set the build environment up."""
         await super().__aenter__()
         # create the virtualenv if creator is specified
         await self.create_venv()
         return self
 
     def activate(self, env: dict[str, str]) -> dict[str, str]:
+        """
+        Activate a python venv in a dictionary of environment variables.
+
+        .. warning:: This modifies the given dictionary in-place.
+
+        Parameters
+        ----------
+        env : dict[str, str]
+            The environment variable mapping to update.
+
+        Returns
+        -------
+        dict[str, str]
+            The dictionary that was passed with `env`.
+        """
         env["VIRTUAL_ENV"] = str(self.venv)
         env["PATH"] = str(self.venv) + ":" + env["PATH"]
         return env
@@ -113,7 +183,9 @@ class VirtualPythonEnvironment(Environment):
         Run a OS process in the environment.
 
         This implementation passes the arguments to
-        :func:`asyncio.create_subprocess_exec`.
+        :func:`asyncio.create_subprocess_exec`. But alters `env` to
+        activate the correct python venv. If a python venv is already activated
+        this activation is overridden.
 
         Returns
         -------
@@ -130,11 +202,47 @@ class VirtualPythonEnvironment(Environment):
 
 
 class Poetry(VirtualPythonEnvironment):
+    """
+    Build Environment for isolated builds with poetry.
+
+    Use this to use poetry to create an isolated python venv for each
+    build and to install specific poetry dependency groups.
+
+    Parameters
+    ----------
+    path : Path
+        The path of the current revision.
+    name : str
+        The name of the environment (usually the name of the revision).
+    args : Iterable[str]
+        The cmd arguments to pass to `poetry install`.
+    """
+
     def __init__(self, path: Path, name: str, *, args: Iterable[str]):
+        """
+        Build Environment for isolated builds using poetry.
+
+        Parameters
+        ----------
+        path : Path
+            The path of the current revision.
+        name : str
+            The name of the environment (usually the name of the revision).
+        args : Iterable[str]
+            The cmd arguments to pass to `poetry install`.
+        """
         super().__init__(path, name, path / ".venv")
         self.args = args
 
     async def __aenter__(self) -> Poetry:
+        """
+        Set the poetry venv up.
+
+        Raises
+        ------
+        BuildError
+            Running `poetry install` failed.
+        """
         self.logger.info("`poetry install`")
 
         cmd: list[str] = ["poetry", "install"]
@@ -160,6 +268,26 @@ class Poetry(VirtualPythonEnvironment):
 
 
 class Pip(VirtualPythonEnvironment):
+    """
+    Build Environment for using a venv and installing deps with pip.
+
+    Use this to run the build commands in a python virtual environment
+    and install dependencies with pip into the venv before the build.
+
+    Parameters
+    ----------
+    path : Path
+        The path of the current revision.
+    name : str
+        The name of the environment (usually the name of the revision).
+    venv : Path
+        The path of the python venv.
+    args : Iterable[str]
+        The cmd arguments to pass to `pip install`.
+    creator : Callable[[Path], Any] | None, optional
+        A callable for creating the venv, by default None
+    """
+
     def __init__(
         self,
         path: Path,
@@ -169,10 +297,34 @@ class Pip(VirtualPythonEnvironment):
         args: Iterable[str],
         creator: Callable[[Path], Any] | None = None,
     ):
+        """
+        Build Environment for using a venv and pip.
+
+        Parameters
+        ----------
+        path : Path
+            The path of the current revision.
+        name : str
+            The name of the environment (usually the name of the revision).
+        venv : Path
+            The path of the python venv.
+        args : Iterable[str]
+            The cmd arguments to pass to `pip install`.
+        creator : Callable[[Path], Any], optional
+            A callable for creating the venv, by default None
+        """
         super().__init__(path, name, venv, creator=creator)
         self.args = args
 
     async def __aenter__(self) -> Pip:
+        """
+        Set the venv up.
+
+        Raises
+        ------
+        BuildError
+            Running `pip install` failed.
+        """
         await super().__aenter__()
 
         logger.info("Running `pip install`...")

@@ -1,3 +1,5 @@
+"""Helpers for the other modules."""
+
 from __future__ import annotations
 
 import asyncio
@@ -18,6 +20,22 @@ else:
     async def to_thread(
         func: Callable[P, R], /, *args: P.args, **kwargs: P.kwargs
     ) -> R:
+        """
+        Run a synchronous function asynchronously in a new thread.
+
+        Parameters
+        ----------
+        func : Callable[P, R]
+            The function to call.
+        *args
+            The arguments to call `func` with.
+        **kwargs
+            The keyword arguments to call `func` with.
+
+        Returns
+        -------
+        The return value of the called function.
+        """
         loop = asyncio.get_running_loop()
         func_call = partial(func, *args, **kwargs)
         return await loop.run_in_executor(None, func_call)

@@ -1,3 +1,5 @@
+"""Git VCS support."""
+
 from __future__ import annotations
 
 import asyncio
@@ -194,7 +196,7 @@ S = TypeVar("S")
 
 
 @GLOBAL_DECODER.register
-class GitRefType(enum.Enum):  # type: ignore[type-var]
+class GitRefType(enum.Enum):
     """Types of git refs."""
 
     TAG = enum.auto()
@@ -280,12 +282,55 @@ class Git(VersionProvider[GitRef]):
 
     @staticmethod
     async def root(path: Path) -> Path:
+        """
+        Determine the root of the current git repository.
+
+        Parameters
+        ----------
+        path : Path
+            A path inside the repo. (Usually the current working directory)
+
+        Returns
+        -------
+        Path
+            The root path of the repo.
+        """
         return await _get_git_root(path)
 
     async def checkout(self, root: Path, dest: Path, revision: GitRef) -> None:
+        """
+        Extract a specific revision to the given path.
+
+        Parameters
+        ----------
+        root : Path
+            The root path of the git repository.
+        dest : Path
+            The destination to copy the revision to.
+        revision : Any
+            The revision to extract.
+        """
         await _copy_tree(root, revision, dest, self.buffer_size)
 
     async def predicate(self, root: Path, ref: GitRef) -> bool:
+        """
+        Check whether a revision should be build.
+
+        This predicate is used by :method:`retrieve` to filter the
+        git references retrieved.
+
+        Parameters
+        ----------
+        root : Path
+            The root path of the git repo.
+        ref : GitRef
+            The git reference to check.
+
+        Returns
+        -------
+        bool
+            Whether to build the revision referenced.
+        """
         match = True
         if ref.type_ == GitRefType.TAG:
             match = bool(self.tag_regex.fullmatch(ref.name))
@@ -304,6 +349,23 @@ class Git(VersionProvider[GitRef]):
         return True
 
     async def retrieve(self, root: Path) -> Iterable[GitRef]:
+        """
+        List all build targets.
+
+        This retrieves all references from git and filters them using the
+        options this instance was initialized with.
+
+        Parameters
+        ----------
+        root : Path
+            The root path of the project.
+
+        Returns
+        -------
+        tuple[GitRef]
+            The revisions/git references to build.
+        """
+
         async def handle(ref: GitRef) -> GitRef | None:
             if await self.predicate(root, ref):
                 return ref

@@ -1,3 +1,5 @@
+"""API to use in config files like `conf.py`."""
+
 from __future__ import annotations
 
 import os
@@ -9,10 +11,33 @@ from sphinx_polyversion.json import GLOBAL_DECODER
 
 
 class LoadError(RuntimeError):
-    pass
+    """An error occurred during loading of the metadata."""
 
 
 def load(namespace: dict[str, Any] | None = None) -> Any:
+    """
+    Load metadata and sphinx config vars.
+
+    This loads the polyversion metadata about the current revision
+    and more from the `POLYVERSION_DATA` environment variable.
+    You can pass this method the `globals()` dictionary to load
+    the needed sphinx config vars and make them available as global variables.
+
+    Parameters
+    ----------
+    namespace : dict[str, Any] | None, optional
+        The dictionary to load the data into, by default None
+
+    Returns
+    -------
+    Any
+        The data loaded from the env var.
+
+    Raises
+    ------
+    LoadError
+        The environment variable isn't set.
+    """
     namespace = namespace or {}
 
     key = "POLYVERSION_DATA"

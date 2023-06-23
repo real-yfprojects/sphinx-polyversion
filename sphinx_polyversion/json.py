@@ -1,3 +1,5 @@
+"""(De-)Serialize python objects to/from json."""
+
 from __future__ import annotations
 
 import json
@@ -21,11 +23,13 @@ from typing import (
     runtime_checkable,
 )
 
-__all__ = ["Transformable", "Encoder", "Decoder"]
+__all__ = ["Encoder", "Decoder", "RecursionWarning", "std_hook"]
 
 
-#: Python types representing a JSON object
+#: Python types representing a key in JSON mapping
 JSON_TYPE_KEY = Union[None, bool, int, float, str]
+
+#: Python types representing a JSON object (as returned by json.load)
 JSON_TYPE = Union[
     JSON_TYPE_KEY,
     List["JSON_TYPE"],
@@ -33,6 +37,7 @@ JSON_TYPE = Union[
     Dict[str, "JSON_TYPE"],
 ]
 
+#: Python types supported by the build-in json module (json.dump)
 JSON_TYPE_DUMP = Union[
     JSON_TYPE_KEY,
     List["JSON_TYPE_DUMP"],
@@ -42,19 +47,42 @@ JSON_TYPE_DUMP = Union[
 
 
 class RecursionWarning(UserWarning):
-    pass
+    """
+    A transformable object returns its own type.
+
+    This usually results in an infinite recursion since
+    `_json_fields` is called over and over.
+    """
 
 
 class Transformable(Protocol):
+    """Protocol for classes whose instances can be converted from and to json."""
+
     def _json_fields(self) -> JSONable:
-        ...
+        """
+        Return a representation of the objects fields.
+
+        This representation should in turn be serializable by this module.
+        """
 
     @classmethod
-    def _from_json_fields(cls: Type[T], o: JSON_TYPE) -> T:
-        pass
+    def _from_json_fields(cls: Type[T], o: Any) -> T:
+        """
+        Instantiate this class from the deserialized json.
+
+        Parameters
+        ----------
+        o : Any
+            The deserialized fields as they were returned
+            by :method:`_json_fields` earlier.
+
+        Returns
+        -------
+        An instance of this class.
+        """
 
 
-#: Python types that this module can encode
+#: Python types that this module can encode (without using hooks)
 JSONable = Union[
     JSON_TYPE_KEY,
     List["JSONable"],
@@ -65,6 +93,21 @@ JSONable = Union[
 
 
 class Encoder(json.JSONEncoder):
+    """
+    JSON Encoder supporting all kinds of python objects.
+
+    This Encoder supports types/instances implementing the `Transformable`
+    protocol. You can also pass hooks to the Encoder for supporting types
+    not implementing set protocol.
+
+    Parameters
+    ----------
+    hooks : Iterable[JSONHook] | JSONHook, optional
+        The object hooks to use, by default []
+    **kwargs
+        Keyword arguments passed to :class:`json.JSONEncoder`
+    """
+
     @overload
     def __init__(self, hook: JSONHook, /, **kwargs: Any) -> None:
         ...
@@ -76,11 +119,39 @@ class Encoder(json.JSONEncoder):
     def __init__(
         self, hooks: Iterable[JSONHook] | JSONHook = [], /, **kwargs: Any
     ) -> None:
+        """
+        Init the JSON Encoder.
+
+        Parameters
+        ----------
+        hooks : Iterable[JSONHook] | JSONHook, optional
+            The object hooks to use, by default []
+        **kwargs
+            Keyword arguments passed to :class:`json.JSONEncoder`
+        """
         super().__init__(**kwargs)
         self.hooks = [hooks] if isinstance(hooks, JSONHook) else hooks
 
     @staticmethod
     def determine_classname(o: object | type, instance: bool = True) -> str:
+        """
+        Determine a unique identifier for a python class or instance.
+
+        This method is put in the produced json to encode classes that aren't
+        natively supported by JSON.
+
+        Parameters
+        ----------
+        o : object | type
+            The object to identify
+        instance : bool, optional
+            Whether the object is a class/type or an instance, by default True
+
+        Returns
+        -------
+        str
+            The identifier
+        """
         module = getmodule(o)
         mod_name = module.__name__ if module else ""
         c = type(o) if instance else cast(type, o)
@@ -88,6 +159,19 @@ class Encoder(json.JSONEncoder):
         return f"{mod_name}.{cls_name}"
 
     def transform(self, o: JSONable) -> JSON_TYPE_DUMP:
+        """
+        Replace custom types by an encodable dictionary.
+
+        Parameters
+        ----------
+        o : JSONable
+            The json object to iterate over.
+
+        Returns
+        -------
+        JSON_TYPE_DUMP
+            The resulting json object.
+        """
         for hook in self.hooks:
             if (fields := hook.fields(o)) is not None:
                 return {
@@ -122,6 +206,23 @@ class Encoder(json.JSONEncoder):
         return o
 
     def __call__(self, o: JSONable) -> JSON_TYPE_DUMP:
+        """
+        Replace custom types by an encodable dictionary.
+
+        Parameters
+        ----------
+        o : JSONable
+            The json object to iterate over.
+
+        Returns
+        -------
+        JSON_TYPE_DUMP
+            The resulting json object.
+
+        Notes
+        -----
+        Calls :method:`transform` internally.
+        """
         return self.transform(o)
 
     def iterencode(self, o: JSONable, _one_shot: bool = False) -> Iterator[str]:
@@ -134,6 +235,44 @@ T = TypeVar("T", bound=Transformable)
 
 
 class Decoder(json.JSONDecoder):
+    """
+    A json decoder supporting all kinds of python objects.
+
+    To decode such an object, three requirements have to be fullfilled:
+    1. The object has to implement the :class:`Tranformable`
+    protocol or a :class:`JSONHook` has to be implemented for the type.
+    2. The object has to be encoded in the correct format as done by :class:`Encoder`.
+    3. THe hook or class has to be registered with this decoder. You can use
+    :method:`register` for that. This method can also be used as a class decorator.
+
+    Parameters
+    ----------
+    decoder : Decoder | None, optional
+        A decoder to inherit properties from, by default None
+    parse_float : Callable[[str], Any] | None, optional
+        Float parser, by default None
+    parse_int : Callable[[str], Any] | None, optional
+        Int parser, by default None
+    parse_constant : Callable[[str], Any] | None, optional
+        Constant parser, by default None
+    strict : bool, optional
+        Whether to disallow control characters, by default True
+
+    Attributes
+    ----------
+    registered_types : List[type]
+        The transformable types registered for decoding.
+    hooks : List[Type[JSONHook]]
+        hooks registered for decoding.
+
+    Methods
+    -------
+    register(*t)
+        Register a hook or a tranformable type.
+    register_from(decoder)
+        Register all types registered by another decoder.
+    """
+
     def __init__(
         self,
         decoder: Decoder | None = None,
@@ -143,6 +282,22 @@ class Decoder(json.JSONDecoder):
         parse_constant: Callable[[str], Any] | None = None,
         strict: bool = True,
     ) -> None:
+        """
+        Init the json decoder.
+
+        Parameters
+        ----------
+        decoder : Decoder | None, optional
+            A decoder to inherit properties from, by default None
+        parse_float : Callable[[str], Any] | None, optional
+            Float parser, by default None
+        parse_int : Callable[[str], Any] | None, optional
+            Int parser, by default None
+        parse_constant : Callable[[str], Any] | None, optional
+            Constant parser, by default None
+        strict : bool, optional
+            Whether to disallow control characters, by default True
+        """
         if decoder:
             parse_float = parse_float or decoder.parse_float
             parse_int = parse_int or decoder.parse_int
@@ -162,27 +317,54 @@ class Decoder(json.JSONDecoder):
 
     @property
     def registered_types(self) -> List[type]:
+        """List of transformable types registered for decoding."""
         return list(self.type_dict.values())
 
     @property
-    def hooks(self) -> List[JSONHook]:
+    def hooks(self) -> List[Type[JSONHook]]:
+        """List of hooks registered for decoding."""
         return list(self.type_hooks.values())
 
     @staticmethod
     def determine_classname(t: type) -> str:
+        """
+        Determine a unique identifier for a class/type.
+
+        This identifier is used to store hooks and types but also
+        to select the correct one when its identifier is found in the
+        json to decode.
+
+        Parameters
+        ----------
+        t : type
+            The class/type to identify.
+
+        Returns
+        -------
+        str
+            The identifier.
+        """
         mod_name = getmodule(t).__name__  # type: ignore
         cls_name = t.__qualname__
         return f"{mod_name}.{cls_name}"
 
     def register_from(self, decoder: Decoder) -> None:
+        """Register all types registered by another decoder."""
         self.register(*self.registered_types)
+        self.register(*self.hooks)
 
     @overload
     def register(self, t: Type[T], /) -> Type[T]:
         ...
 
     @overload
-    def register(self, t1: Type[T], t2: Type[T], /, *types: Type[T]) -> None:
+    def register(
+        self,
+        t1: Type[JSONHook] | Type[T],
+        t2: Type[JSONHook] | Type[T],
+        /,
+        *types: Type[JSONHook] | Type[T],
+    ) -> None:
         ...
 
     @overload
@@ -192,6 +374,22 @@ class Decoder(json.JSONDecoder):
     def register(
         self, *ts: Type[JSONHook] | Type[T]
     ) -> Type[T] | Type[JSONHook] | None:
+        """
+        Register a hook or a tranformable type.
+
+        A decoder can only decode serialized objects if their type or a
+        corresponding hook was registered with the decoder.
+
+        This method can be used as decorator for :class:`Tranformable` classes
+        or hook classes.
+
+        Raises
+        ------
+        ValueError
+            Hook or class already registered
+        TypeError
+            Invalid type that doesn't implement :class:`JSONHook` or :class:`Transformable`.
+        """
         for t in ts:
             key = self.determine_classname(t)
             if isinstance(t, JSONHook):
@@ -230,29 +428,75 @@ class Decoder(json.JSONDecoder):
         return o
 
 
+#: Constant and global convenience decoder instance
+#: that has all types and hooks in this package registered
+#: (if the corresponding types where loaded through an import of the containing module)
 GLOBAL_DECODER = Decoder()
 
 
 @runtime_checkable
 class JSONHook(Protocol):
+    """Base for hooks for arbitrary python objects."""
+
     @staticmethod
-    def fields(o: Any) -> None | Any:
-        ...
+    def fields(o: Any) -> None | JSONable:
+        """
+        Return serializable representation of an instances state.
+
+        If an instance isn't support this method should return None.
+        Otherwise it should return a representation of the instances
+        fields.
+
+        Parameters
+        ----------
+        o : Any
+            Any object that should be encoded.
+
+        Returns
+        -------
+        None | JSONable
+            The fields of the objects if it is supported else None
+        """
 
     @staticmethod
     def from_json(cls: str, o: JSON_TYPE) -> Any:
-        ...
+        """
+        Instanciate an object from its fields.
+
+        This method is only called with supported instances that were
+        encoded with the help of :method:`fields`.
+
+        Parameters
+        ----------
+        cls : str
+            The identifier of the class to create an instance of.
+        o : JSON_TYPE
+            The decoded fields.
+
+        Returns
+        -------
+        Any
+            The deserialized object.
+        """
 
 
 @GLOBAL_DECODER.register
 class std_hook(JSONHook):
+    """
+    A set of standard hooks implemented by this module.
+
+    This currently on supports the `datetime` class.
+    """
+
     @staticmethod
     def fields(o: Any) -> str | None:
+        """Make an object encodable."""
         if isinstance(o, datetime):
             return o.isoformat()
         return None
 
     @staticmethod
     def from_json(cls: str, o: JSON_TYPE) -> Any:
+        """Decode an object."""
         o = cast(str, o)
         return datetime.fromisoformat(o)
