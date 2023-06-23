@@ -89,7 +89,7 @@ ignore = [
     # pycodestyle
     "E501", # line-too-long
     # pylint
-    # "PLR0913", # too-many-arguments
+    "PLR0913", # too-many-arguments
     # "PLR0912", # too-many-branches
     # "PLR0915", # too-many-statements
     # flake8-todos

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import shutil
 import sys
 import tempfile
 from abc import ABCMeta, abstractmethod
@@ -27,7 +28,8 @@ from typing import (
 
 from sphinx_polyversion.builder import Builder, BuildError
 from sphinx_polyversion.environment import Environment
-from sphinx_polyversion.json import JSONable
+from sphinx_polyversion.json import Encoder, JSONable
+from sphinx_polyversion.utils import shift_path
 
 if TYPE_CHECKING:
     from sphinx_polyversion.vcs import VersionProvider
@@ -292,6 +294,27 @@ class DefaultDriver(Driver[JRT, ENV]):
 
     This convenience class allows creating a driver from a version provider,
     a builder and an Environment factory.
+
+    Parameters
+    ----------
+    cwd : Path
+        The current working directory
+    output_dir : Path
+        The directory where to place the built docs.
+    vcs : VersionProvider[JRT]
+        The version provider to use.
+    builder : Builder[ENV, Any]
+        The builder to use.
+    env : Callable[[Path, str], ENV]
+        A factory producing the environments to use.
+    namer : Callable[[RT], str]
+        A callable determining the name of a revision.
+    encoder : Encoder, optional
+        The encoder to use for dumping `versions.json` to the output dir.
+    static_dir : Path, optional
+        The source directory for root level static files.
+    template_dir : Path, optional
+        The source directory for root level templates.
     """
 
     def __init__(
@@ -303,6 +326,9 @@ class DefaultDriver(Driver[JRT, ENV]):
         builder: Builder[ENV, Any],
         env: Callable[[Path, str], ENV],
         namer: Callable[[RT], str],
+        encoder: Encoder | None = None,
+        static_dir: Path | None = None,
+        template_dir: Path | None = None,
     ) -> None:
         """
         Init the driver.
@@ -321,12 +347,21 @@ class DefaultDriver(Driver[JRT, ENV]):
             A factory producing the environments to use.
         namer : Callable[[RT], str]
             A callable determining the name of a revision.
+        encoder : Encoder, optional
+            The encoder to use for dumping `versions.json` to the output dir.
+        static_dir : Path, optional
+            The source directory for root level static files.
+        template_dir : Path, optional
+            The source directory for root level templates.
         """
         super().__init__(cwd, output_dir)
+        self.static_dir = static_dir
+        self.template_dir = template_dir
         self.vcs = vcs
         self.builder = builder
         self.env_factory = env
         self.namer = namer
+        self.encoder = encoder or Encoder()
 
     def name_for_rev(self, rev: RT) -> str:
         """
@@ -457,4 +492,26 @@ class DefaultDriver(Driver[JRT, ENV]):
         The root of the output directory contains subdirectories for the docs
         of each revision. This method adds more to this root directory.
         """
-        # TODO: Implement root render
+        # metadata as json
+        (self.output_dir / "versions.json").write_text(self.encoder.encode(self.builds))
+
+        # copy static files
+        if self.static_dir and self.static_dir.exists():
+            for file in self.static_dir.rglob("*"):
+                shutil.copyfile(
+                    file, shift_path(self.static_dir, self.output_dir, file)
+                )
+
+        # generate dynamic files from jinja templates
+        if self.template_dir and self.template_dir.is_dir():
+            import jinja2
+
+            env = jinja2.Environment(
+                loader=jinja2.FileSystemLoader(str(self.template_dir)),
+                autoescape=jinja2.select_autoescape(),
+            )
+            for template_path_str in env.list_templates():
+                template = env.get_template(template_path_str)
+                rendered = template.render(revisions=self.builds, repo=self.cwd)
+                output_path = self.output_dir / template_path_str
+                output_path.write_text(rendered)

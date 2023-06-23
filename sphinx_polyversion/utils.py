@@ -8,6 +8,8 @@ from functools import partial
 from typing import TYPE_CHECKING, Callable, TypeVar
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from typing_extensions import ParamSpec
 
     P = ParamSpec("P")
@@ -39,3 +41,25 @@ else:
         loop = asyncio.get_running_loop()
         func_call = partial(func, *args, **kwargs)
         return await loop.run_in_executor(None, func_call)
+
+
+def shift_path(src_anchor: Path, dst_anchor: Path, src: Path) -> Path:
+    """
+    Shift a path from one anchor (root) directory to another.
+
+    Parameters
+    ----------
+    src_anchor : Path
+        The anchor
+    dst_anchor : Path
+        The destination
+    src : Path
+        The path to shift
+
+    Returns
+    -------
+    Path
+        The shifted path
+
+    """
+    return dst_anchor / src.relative_to(src_anchor)
