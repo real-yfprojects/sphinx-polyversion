@@ -130,7 +130,42 @@ class Encoder(json.JSONEncoder):
             Keyword arguments passed to :class:`json.JSONEncoder`
         """
         super().__init__(**kwargs)
-        self.hooks = [hooks] if isinstance(hooks, JSONHook) else hooks
+        self.hooks = {hooks} if isinstance(hooks, JSONHook) else set(hooks)
+
+    @overload
+    def register(
+        self,
+        t1: Type[JSONHook],
+        t2: Type[JSONHook],
+        /,
+        *types: Type[JSONHook],
+    ) -> None:
+        ...
+
+    @overload
+    def register(self, hook: Type[JSONHook], /) -> Type[JSONHook]:
+        ...
+
+    def register(self, *ts: Type[JSONHook]) -> Type[JSONHook] | None:
+        """
+        Register a hook or a transformable type.
+
+        A decoder can only decode serialized objects if their type or a
+        corresponding hook was registered with the decoder.
+
+        This method can be used as decorator for :class:`Tranformable` classes
+        or hook classes.
+
+        Raises
+        ------
+        ValueError
+            Hook or class already registered
+        TypeError
+            Invalid type that doesn't implement :class:`JSONHook` or :class:`Transformable`.
+        """
+        for t in ts:
+            self.hooks.add(t)
+        return ts[0] if len(ts) == 1 else None
 
     @staticmethod
     def determine_classname(o: object | type, instance: bool = True) -> str:
@@ -375,7 +410,7 @@ class Decoder(json.JSONDecoder):
         self, *ts: Type[JSONHook] | Type[T]
     ) -> Type[T] | Type[JSONHook] | None:
         """
-        Register a hook or a tranformable type.
+        Register a hook or a transformable type.
 
         A decoder can only decode serialized objects if their type or a
         corresponding hook was registered with the decoder.
@@ -428,12 +463,6 @@ class Decoder(json.JSONDecoder):
         return o
 
 
-#: Constant and global convenience decoder instance
-#: that has all types and hooks in this package registered
-#: (if the corresponding types where loaded through an import of the containing module)
-GLOBAL_DECODER = Decoder()
-
-
 @runtime_checkable
 class JSONHook(Protocol):
     """Base for hooks for arbitrary python objects."""
@@ -480,6 +509,18 @@ class JSONHook(Protocol):
         """
 
 
+#: Constant and global convenience decoder instance
+#: that has all types and hooks in this package registered
+#: (if the corresponding types were loaded through an import of the containing module)
+GLOBAL_DECODER = Decoder()
+
+#: Constant and global convenience encoder instance
+#: that has all hooks in this package registered
+#: (if they were loaded through an import of the containing module)
+GLOBAL_ENCODER = Encoder()
+
+
+@GLOBAL_ENCODER.register
 @GLOBAL_DECODER.register
 class std_hook(JSONHook):
     """

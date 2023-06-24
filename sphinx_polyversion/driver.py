@@ -28,7 +28,7 @@ from typing import (
 
 from sphinx_polyversion.builder import Builder, BuildError
 from sphinx_polyversion.environment import Environment
-from sphinx_polyversion.json import Encoder, JSONable
+from sphinx_polyversion.json import GLOBAL_ENCODER, Encoder, JSONable
 from sphinx_polyversion.utils import shift_path
 
 if TYPE_CHECKING:
@@ -363,7 +363,7 @@ class DefaultDriver(Driver[JRT, ENV]):
         self.builder = builder
         self.env_factory = env
         self.namer = namer
-        self.encoder = encoder or Encoder()
+        self.encoder = encoder or GLOBAL_ENCODER
 
     def name_for_rev(self, rev: JRT) -> str:
         """

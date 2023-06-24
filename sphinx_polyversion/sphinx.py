@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Iterable
 
 from sphinx_polyversion.builder import Builder, BuildError
 from sphinx_polyversion.environment import Environment
-from sphinx_polyversion.json import Encoder, JSONable, std_hook
+from sphinx_polyversion.json import GLOBAL_ENCODER, JSONable
 
 if TYPE_CHECKING:
     import json
@@ -69,7 +69,7 @@ class CommandBuilder(Builder[Environment, None]):
         self.cmd = cmd
         self.source = source
         self.logger = logger
-        self.encoder = encoder or Encoder(std_hook)
+        self.encoder = encoder or GLOBAL_ENCODER
 
     async def build(
         self, environment: Environment, output_dir: Path, data: JSONable
