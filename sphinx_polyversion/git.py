@@ -25,6 +25,7 @@ from typing import (
 )
 
 from sphinx_polyversion.json import GLOBAL_DECODER
+from sphinx_polyversion.utils import async_all
 from sphinx_polyversion.vcs import VersionProvider
 
 __all__ = ["GitRef", "GitRefType", "Git", "file_predicate"]
@@ -251,10 +252,7 @@ def file_predicate(
     files = [PurePath(file) for file in files]
 
     async def predicate(repo: Path, ref: GitRef) -> bool:
-        for file in files:  # noqa: SIM110
-            if not await file_exists(repo, ref, file):  # type: ignore[arg-type]
-                return False
-        return True
+        return await async_all(file_exists(repo, ref, file) for file in files)  # type: ignore[arg-type]
 
     return predicate
 

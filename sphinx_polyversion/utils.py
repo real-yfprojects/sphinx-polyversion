@@ -7,7 +7,16 @@ import importlib
 import importlib.util
 import sys
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from pathlib import PurePath
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Iterator,
+    TypeVar,
+    cast,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -45,7 +54,10 @@ else:
         return await loop.run_in_executor(None, func_call)
 
 
-def shift_path(src_anchor: Path, dst_anchor: Path, src: Path) -> Path:
+PA = TypeVar("PA", bound=PurePath)
+
+
+def shift_path(src_anchor: PA, dst_anchor: PA, src: PA) -> PA:
     """
     Shift a path from one anchor (root) directory to another.
 
@@ -99,3 +111,43 @@ def import_file(path: Path) -> Any:
     spec.loader.exec_module(module)
 
     return module
+
+
+async def async_all(awaitables: Iterator[Awaitable[Any]]) -> bool:
+    """
+    Return True if all awaitables return True.
+
+    If the iterator is empty, True is returned. The awaitables may
+    return any value. These values are converted to boolean.
+
+    Parameters
+    ----------
+    awaitables : Iterator[Awaitable[Any]]
+        The awaitables to check.
+
+    Returns
+    -------
+    bool
+        Whether all awaitables returned True.
+    """
+    tasks = cast(
+        asyncio.Task,  # type: ignore[type-arg]
+        {
+            asyncio.create_task(aws) if asyncio.iscoroutine(aws) else aws
+            for aws in awaitables
+        },
+    )
+    while tasks:
+        done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        for finished_task in done:
+            result = finished_task.result()
+
+            if not result:
+                # if one fails we already know the return value
+                # cancel the other tasks
+                for unfinished_task in tasks:
+                    unfinished_task.cancel()
+                if tasks:
+                    await asyncio.wait(tasks)
+                return False
+    return True
