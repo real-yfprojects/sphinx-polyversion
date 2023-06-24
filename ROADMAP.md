@@ -14,7 +14,7 @@
 
 # 0.2.0
 
-- [ ] Tests for 0.1.0
+- [ ] Unittests for 0.1.0
 - [x] Docstrings
 - [x] Venv support
 - [x] Virtualenv support
@@ -22,11 +22,11 @@
 - [x] Implement API for polyconf.py
   - [x] Override conf values
   - [x] Basic configuration
-- [ ] Entry point to run from terminal
+- [x] Entry point to run from terminal
 
 # 0.3.0
 
-- [ ] Tests for 0.2.0
+- [ ] Unittests for 0.2.0
 - [ ] Fix async file_predicate
 - [ ] Fix Poetry env location
 - [ ] Register hooks with Encoder
@@ -37,7 +37,7 @@
 
 # 0.4.0
 
-- [ ] Tests for 0.3.0
+- [ ] Unittests for 0.3.0
 - [ ] Helper for customizing behaviour inside polyconf.py
   - [ ] Helpers for dynamic build paths
   - [ ] Helper for custom build command
@@ -47,7 +47,8 @@
 # 1.0.0-alpha1
 
 - [ ] High Test coverage
-  - [ ] Tests for 0.4.0
+  - [ ] Unittests for 0.4.0
+  - [ ] Integration tests
 - [ ] README
 - [ ] Easily build local version and mocking
 
