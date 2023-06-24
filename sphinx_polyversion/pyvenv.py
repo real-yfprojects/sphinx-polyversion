@@ -7,6 +7,7 @@ import os
 from asyncio.subprocess import PIPE
 from inspect import isawaitable
 from logging import getLogger
+from pathlib import Path
 from subprocess import CalledProcessError
 from typing import (
     TYPE_CHECKING,
@@ -24,8 +25,6 @@ from sphinx_polyversion.environment import Environment
 from sphinx_polyversion.utils import to_thread
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from typing_extensions import Self
 
 logger = getLogger(__name__)
@@ -173,7 +172,7 @@ class VirtualPythonEnvironment(Environment):
             The dictionary that was passed with `env`.
         """
         env["VIRTUAL_ENV"] = str(self.venv)
-        env["PATH"] = str(self.venv) + ":" + env["PATH"]
+        env["PATH"] = str(self.venv / "bin") + ":" + env["PATH"]
         return env
 
     async def run(
@@ -243,6 +242,7 @@ class Poetry(VirtualPythonEnvironment):
         BuildError
             Running `poetry install` failed.
         """
+        # create venv and install deps
         self.logger.info("`poetry install`")
 
         cmd: list[str] = ["poetry", "install"]
@@ -264,6 +264,23 @@ class Poetry(VirtualPythonEnvironment):
             raise BuildError from CalledProcessError(
                 cast(int, process.returncode), " ".join(cmd), out, err
             )
+
+        # locate venv
+        cmd: list[str] = ["poetry", "env", "info", "-p"]
+        process = await asyncio.create_subprocess_exec(
+            *cmd, cwd=self.path, env=env, stdout=PIPE, stderr=PIPE
+        )
+        out, err = await process.communicate()
+        out = out.decode()
+        err = err.decode()
+
+        self.logger.debug("Venv location:\n %s", out)
+        if process.returncode != 0:
+            self.logger.error("Error locating venv:\n %s", err)
+            raise BuildError from CalledProcessError(
+                cast(int, process.returncode), " ".join(cmd), out, err
+            )
+        self.venv = Path(out)
         return self
 
 
