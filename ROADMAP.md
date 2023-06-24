@@ -14,21 +14,25 @@
 
 # 0.2.0
 
-- [x] Docstrings
 - [ ] Tests for 0.1.0
+- [x] Docstrings
 - [x] Venv support
 - [x] Virtualenv support
 - [x] Implement root render
-- [ ] SWP pre-commit hook
-- [ ] Implement API for polyconf.py
-  - [ ] Basic configuration
+- [x] Implement API for polyconf.py
+  - [x] Override conf values
+  - [x] Basic configuration
+- [ ] Entry point to run from terminal
 
 # 0.3.0
 
 - [ ] Tests for 0.2.0
+- [ ] Fix async file_predicate
+- [ ] Fix Poetry env location
+- [ ] Register hooks with Encoder
 - [ ] Extend API for polyconf.py
-  - [ ] Override conf values
   - [ ] Provide values for conf
+  - [ ] typing for config vars (used for overrides)
   - [ ] custom data -> custom decoder, encoder
 
 # 0.4.0
