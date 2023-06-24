@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
+import importlib.util
 import sys
 from functools import partial
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -63,3 +65,37 @@ def shift_path(src_anchor: Path, dst_anchor: Path, src: Path) -> Path:
 
     """
     return dst_anchor / src.relative_to(src_anchor)
+
+
+def import_file(path: Path) -> Any:
+    """
+    Import a module from its location in the file system.
+
+    Parameters
+    ----------
+    path : Path
+        The location of the python file to import.
+
+    Returns
+    -------
+    Any
+        The imported module.
+
+    Raises
+    ------
+    OSError
+        The module spec couldn't be created.
+    ImportError
+        No loader was found for the module.
+    """
+    module_name = path.stem
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if not spec:
+        raise OSError(f"Failed to load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    if not spec.loader:
+        raise ImportError(f"Failed to load {path}")
+    spec.loader.exec_module(module)
+
+    return module

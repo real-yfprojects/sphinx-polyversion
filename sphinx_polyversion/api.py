@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import os
-import sys
 from typing import Any
 
 from sphinx_polyversion.json import GLOBAL_DECODER
+from sphinx_polyversion.main import get_parser
 
 __all__ = ["load", "apply_overrides"]
 
@@ -72,7 +72,9 @@ def apply_overrides(namespace: dict[str, Any]) -> dict[str, Any]:
     dict[str, Any]
         The values that were applied to the namespace.
     """
-    args = sys.argv[1:]
-    kwargs = dict(zip(args[::2], args[1::2]))
-    namespace.update(kwargs)
-    return kwargs
+    args = get_parser().parse_args()
+    overrides: dict[str, str] = args.override
+    if args.out:
+        overrides["OUTPUT_DIR"] = args.out
+    namespace.update(overrides)
+    return overrides
