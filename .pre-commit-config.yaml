@@ -29,6 +29,7 @@ repos:
       - id: poetry-check
       - id: poetry-lock
         args: ["--no-update"]
+        files: ^pyproject\.toml|poetry\.lock$
 
   - repo: https://github.com/floatingpurr/sync_with_poetry
     rev: 41b6bf233c52f08f344e09107bdda253e6d8b57a # frozen: 1.1.0
