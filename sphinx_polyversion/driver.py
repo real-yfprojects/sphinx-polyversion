@@ -34,6 +34,9 @@ from sphinx_polyversion.utils import shift_path
 if TYPE_CHECKING:
     from sphinx_polyversion.vcs import VersionProvider
 
+__all__ = ["Driver", "DefaultDriver"]
+
+
 EXC_INFO = Tuple[Type[BaseException], BaseException, TracebackType]
 ENV = TypeVar("ENV", bound=Environment)
 RT = TypeVar("RT")
@@ -70,18 +73,18 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
     #: Revisions of successful builds.
     builds: List[RT]
 
-    def __init__(self, cwd: Path, output_dir: Path) -> None:
+    def __init__(self, root: Path, output_dir: Path) -> None:
         """
         Init the driver.
 
         Parameters
         ----------
-        cwd : Path
+        root : Path
             The current working directory
         output_dir : Path
             The directory where to place the built docs.
         """
-        self.cwd = cwd
+        self.root = root
         self.output_dir = output_dir
         self.builds = []
 
@@ -241,7 +244,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
                 # create temporary directory to use for building this version
                 path = await stack.enter_async_context(self.tmp_dir(rev))
                 # copy source files
-                await self.vcs.checkout(self.cwd, path, rev)
+                await self.vcs.checkout(self.root, path, rev)
                 # setup build environment (e.g. poetry/pip venv)
                 env = cast(
                     ENV,
@@ -275,8 +278,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         """Prepare the building."""
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.vcs = await self.init_vcs()
-        self.cwd = await self.vcs.root(self.cwd)
-        self.targets = await self.vcs.retrieve(self.cwd)
+        self.targets = await self.vcs.retrieve(self.root)
 
     async def run(self) -> None:
         """Build all revisions."""
@@ -319,13 +321,13 @@ class DefaultDriver(Driver[JRT, ENV]):
 
     def __init__(
         self,
-        cwd: Path,
+        root: Path,
         output_dir: Path,
         *,
         vcs: VersionProvider[JRT],
         builder: Builder[ENV, Any],
         env: Callable[[Path, str], ENV],
-        namer: Callable[[RT], str],
+        namer: Callable[[JRT], str],
         encoder: Encoder | None = None,
         static_dir: Path | None = None,
         template_dir: Path | None = None,
@@ -335,7 +337,7 @@ class DefaultDriver(Driver[JRT, ENV]):
 
         Parameters
         ----------
-        cwd : Path
+        root : Path
             The current working directory
         output_dir : Path
             The directory where to place the built docs.
@@ -345,7 +347,7 @@ class DefaultDriver(Driver[JRT, ENV]):
             The builder to use.
         env : Callable[[Path, str], ENV]
             A factory producing the environments to use.
-        namer : Callable[[RT], str]
+        namer : Callable[[JRT], str]
             A callable determining the name of a revision.
         encoder : Encoder, optional
             The encoder to use for dumping `versions.json` to the output dir.
@@ -354,7 +356,7 @@ class DefaultDriver(Driver[JRT, ENV]):
         template_dir : Path, optional
             The source directory for root level templates.
         """
-        super().__init__(cwd, output_dir)
+        super().__init__(root, output_dir)
         self.static_dir = static_dir
         self.template_dir = template_dir
         self.vcs = vcs
@@ -363,7 +365,7 @@ class DefaultDriver(Driver[JRT, ENV]):
         self.namer = namer
         self.encoder = encoder or Encoder()
 
-    def name_for_rev(self, rev: RT) -> str:
+    def name_for_rev(self, rev: JRT) -> str:
         """
         Determine the name of a revision.
 
@@ -512,6 +514,6 @@ class DefaultDriver(Driver[JRT, ENV]):
             )
             for template_path_str in env.list_templates():
                 template = env.get_template(template_path_str)
-                rendered = template.render(revisions=self.builds, repo=self.cwd)
+                rendered = template.render(revisions=self.builds, repo=self.root)
                 output_path = self.output_dir / template_path_str
                 output_path.write_text(rendered)

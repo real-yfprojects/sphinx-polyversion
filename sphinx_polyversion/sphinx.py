@@ -8,8 +8,9 @@ from logging import getLogger
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING, Any, Iterable
 
-from sphinx_polyversion.builder import ENV, Builder, BuildError
-from sphinx_polyversion.json import Encoder, JSONable
+from sphinx_polyversion.builder import Builder, BuildError
+from sphinx_polyversion.environment import Environment
+from sphinx_polyversion.json import Encoder, JSONable, std_hook
 
 if TYPE_CHECKING:
     import json
@@ -27,7 +28,7 @@ class Placeholder(enum.Enum):
     OUTPUT_DIR = enum.auto()
 
 
-class CommandBuilder(Builder[ENV, None]):
+class CommandBuilder(Builder[Environment, None]):
     """
     A builder that starts another process.
 
@@ -68,9 +69,11 @@ class CommandBuilder(Builder[ENV, None]):
         self.cmd = cmd
         self.source = source
         self.logger = logger
-        self.encoder = encoder or Encoder()
+        self.encoder = encoder or Encoder(std_hook)
 
-    async def build(self, environment: ENV, output_dir: Path, data: JSONable) -> None:
+    async def build(
+        self, environment: Environment, output_dir: Path, data: JSONable
+    ) -> None:
         """
         Build and render a documentation.
 
@@ -109,7 +112,7 @@ class CommandBuilder(Builder[ENV, None]):
             raise BuildError from CalledProcessError(rc, " ".join(cmd), out, err)
 
 
-class SphinxBuilder(CommandBuilder[ENV]):
+class SphinxBuilder(CommandBuilder):
     """
     A CommandBuilder running `sphinx-build`.
 

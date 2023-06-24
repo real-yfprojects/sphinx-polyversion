@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import os
+import sys
 from typing import Any
 
-# load git module to be able to decode its classses
-import sphinx_polyversion.git  # noqa: F401
 from sphinx_polyversion.json import GLOBAL_DECODER
+
+__all__ = ["load", "apply_overrides"]
 
 
 class LoadError(RuntimeError):
@@ -53,3 +54,25 @@ def load(namespace: dict[str, Any] | None = None) -> Any:
         html_context["data"] = data
 
     return data
+
+
+def apply_overrides(namespace: dict[str, Any]) -> dict[str, Any]:
+    """
+    Override global config vars with values provided from the cmd line.
+
+    You will usually want to pass `globals()`.
+
+    Parameters
+    ----------
+    namespace : dict[str, Any]
+        The dictionary to alter.
+
+    Returns
+    -------
+    dict[str, Any]
+        The values that were applied to the namespace.
+    """
+    args = sys.argv[1:]
+    kwargs = dict(zip(args[::2], args[1::2]))
+    namespace.update(kwargs)
+    return kwargs

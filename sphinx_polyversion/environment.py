@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+from functools import partial
 from logging import getLogger
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Tuple,
+    Type,
     TypeVar,
     cast,
 )
@@ -16,6 +19,8 @@ from sphinx_polyversion.log import ContextAdapter
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+__all__ = ["Environment"]
 
 
 class Environment:
@@ -86,6 +91,28 @@ class Environment:
             out = out.decode() if out is not None else None  # type: ignore[assignment]
             err = err.decode() if err is not None else None  # type: ignore[assignment]
         return out, err, cast(int, process.returncode)
+
+    @classmethod
+    def factory(cls: Type[ENV], **kwargs: Any) -> Callable[[Path, str], ENV]:
+        """
+        Create a factory function for this environment class.
+
+        This returns a factory that can be used with :class:`DefaultDriver`.
+        This method works similiar to :func:`functools.partial`. The arguments
+        passed to this function will be used by the factory to instantiate
+        the actual environment class.
+
+        Parameters
+        ----------
+        **kwargs
+            Arguments to use when creating the instance.
+
+        Returns
+        -------
+        Callable[[Path, str], ENV]
+            The factory function.
+        """
+        return partial(cls, **kwargs)
 
 
 ENV = TypeVar("ENV", bound=Environment)

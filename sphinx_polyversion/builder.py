@@ -7,6 +7,8 @@ from typing import Generic, TypeVar
 from sphinx_polyversion.environment import Environment
 from sphinx_polyversion.json import JSONable
 
+__all__ = ["BuildError", "Builder"]
+
 
 class BuildError(Exception):
     """Building a specific version failed."""

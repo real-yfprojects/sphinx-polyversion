@@ -27,7 +27,7 @@ from typing import (
 from sphinx_polyversion.json import GLOBAL_DECODER
 from sphinx_polyversion.vcs import VersionProvider
 
-__all__ = ["GitRef", "GitRefType", "Git"]
+__all__ = ["GitRef", "GitRefType", "Git", "file_predicate"]
 
 logger = getLogger(__name__)
 
@@ -232,6 +232,22 @@ class GitRef(NamedTuple):
 def file_predicate(
     files: Iterable[str | PurePath],
 ) -> Callable[[Path, GitRef], Coroutine[None, None, bool]]:
+    """
+    Return a predicate that checks for files in a git revision.
+
+    The returned predicate calls :func:`file_exists` for each file and
+    checks whether all files exists in a given revision.
+
+    Parameters
+    ----------
+    files : Iterable[str  |  PurePath]
+        The files to check for.
+
+    Returns
+    -------
+    Callable[[Path, GitRef], Coroutine[None, None, bool]]
+        The predicate.
+    """
     files = [PurePath(file) for file in files]
 
     async def predicate(repo: Path, ref: GitRef) -> bool:
@@ -281,7 +297,24 @@ class Git(VersionProvider[GitRef]):
         self._predicate = predicate
 
     @staticmethod
-    async def root(path: Path) -> Path:
+    async def aroot(path: Path) -> Path:
+        """
+        Determine the root of the current git repository (async).
+
+        Parameters
+        ----------
+        path : Path
+            A path inside the repo. (Usually the current working directory)
+
+        Returns
+        -------
+        Path
+            The root path of the repo.
+        """
+        return await _get_git_root(path)
+
+    @classmethod
+    def root(cls, path: Path) -> Path:
         """
         Determine the root of the current git repository.
 
@@ -295,7 +328,7 @@ class Git(VersionProvider[GitRef]):
         Path
             The root path of the repo.
         """
-        return await _get_git_root(path)
+        return asyncio.run(cls.aroot(path))
 
     async def checkout(self, root: Path, dest: Path, revision: GitRef) -> None:
         """

@@ -12,22 +12,6 @@ class VersionProvider(Protocol[RT]):
     """Base for classes providing target revisions of the docs to build."""
 
     @abstractmethod
-    async def root(self, path: Path) -> Path:
-        """
-        Determine the root of the current project.
-
-        Parameters
-        ----------
-        path : Path
-            A path inside the project. (Usually the current working directory)
-
-        Returns
-        -------
-        Path
-            The root path of the project.
-        """
-
-    @abstractmethod
     async def checkout(self, root: Path, dest: Path, revision: RT) -> None:
         """
         Create copy of a specific revision at the given path.
