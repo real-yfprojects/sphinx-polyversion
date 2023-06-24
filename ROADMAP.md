@@ -14,7 +14,6 @@
 
 # 0.2.0
 
-- [ ] Unittests for 0.1.0
 - [x] Docstrings
 - [x] Venv support
 - [x] Virtualenv support
@@ -26,14 +25,11 @@
 
 # 0.3.0
 
+- [ ] Unittests for 0.1.0
 - [ ] Unittests for 0.2.0
-- [ ] Fix async file_predicate
-- [ ] Fix Poetry env location
-- [ ] Register hooks with Encoder
-- [ ] Extend API for polyconf.py
-  - [ ] Provide values for conf
-  - [ ] typing for config vars (used for overrides)
-  - [ ] custom data -> custom decoder, encoder
+- [x] Fix async file_predicate
+- [x] Fix Poetry env location
+- [x] Register hooks with Encoder
 
 # 0.4.0
 
@@ -74,6 +70,6 @@
 - [ ] Github Action
 - [ ] Multiprocessing
 
-# Future
+# Wishlist
 
-Nothing planned yet
+- typed overrides
