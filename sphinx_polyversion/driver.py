@@ -26,6 +26,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     cast,
 )
 
@@ -35,7 +36,12 @@ from sphinx_polyversion.json import GLOBAL_ENCODER, Encoder, JSONable
 from sphinx_polyversion.utils import shift_path
 
 if TYPE_CHECKING:
+    from os import PathLike
+
     from sphinx_polyversion.vcs import VersionProvider
+
+    StrPath = Union[str, PathLike[str]]
+
 
 __all__ = ["Driver", "DefaultDriver"]
 
@@ -333,8 +339,8 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
 
     def __init__(
         self,
-        root: Path,
-        output_dir: Path,
+        root: StrPath,
+        output_dir: StrPath,
         *,
         vcs: VersionProvider[JRT],
         builder: Builder[ENV, Any] | Mapping[S, Builder[ENV, Any]],
@@ -343,8 +349,8 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]]
         | None = None,
         encoder: Encoder | None = None,
-        static_dir: Path | None = None,
-        template_dir: Path | None = None,
+        static_dir: StrPath | None = None,
+        template_dir: StrPath | None = None,
     ) -> None:
         """
         Init the driver.
@@ -372,9 +378,11 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         template_dir : Path, optional
             The source directory for root level templates.
         """
-        super().__init__(root, output_dir)
-        self.static_dir = static_dir
-        self.template_dir = template_dir
+        super().__init__(Path(root), Path(output_dir))
+        self.static_dir = Path(static_dir) if static_dir is not None else static_dir
+        self.template_dir = (
+            Path(template_dir) if template_dir is not None else template_dir
+        )
         self.vcs = vcs
         self.builder = builder
         self.env_factory = env

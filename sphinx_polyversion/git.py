@@ -361,7 +361,7 @@ class Git(VersionProvider[GitRef]):
         self._predicate = predicate
 
     @staticmethod
-    async def aroot(path: Path) -> Path:
+    async def aroot(path: str | Path) -> Path:
         """
         Determine the root of the current git repository (async).
 
@@ -375,10 +375,10 @@ class Git(VersionProvider[GitRef]):
         Path
             The root path of the repo.
         """
-        return await _get_git_root(path)
+        return await _get_git_root(Path(path))
 
     @classmethod
-    def root(cls, path: Path) -> Path:
+    def root(cls, path: str | Path) -> Path:
         """
         Determine the root of the current git repository.
 

@@ -112,7 +112,7 @@ class VirtualPythonEnvironment(Environment):
         self,
         path: Path,
         name: str,
-        venv: Path,
+        venv: str | Path,
         *,
         creator: Callable[[Path], Any] | None = None,
     ):
@@ -131,7 +131,7 @@ class VirtualPythonEnvironment(Environment):
             A callable for creating the venv, by default None
         """
         super().__init__(path, name)
-        self.venv = venv.resolve()
+        self.venv = Path(venv).resolve()
         self._creator = creator
 
     async def create_venv(self) -> None:
@@ -309,7 +309,7 @@ class Pip(VirtualPythonEnvironment):
         self,
         path: Path,
         name: str,
-        venv: Path,
+        venv: str | Path,
         *,
         args: Iterable[str],
         creator: Callable[[Path], Any] | None = None,

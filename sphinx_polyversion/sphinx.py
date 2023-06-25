@@ -5,6 +5,7 @@ from __future__ import annotations
 import enum
 import os
 from logging import getLogger
+from pathlib import PurePath
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING, Any, Iterable
 
@@ -14,7 +15,7 @@ from sphinx_polyversion.json import GLOBAL_ENCODER, JSONable
 
 if TYPE_CHECKING:
     import json
-    from pathlib import Path, PurePath
+    from pathlib import Path
 
 logger = getLogger(__name__)
 
@@ -49,7 +50,7 @@ class CommandBuilder(Builder[Environment, None]):
 
     def __init__(
         self,
-        source: PurePath,
+        source: str | PurePath,
         cmd: Iterable[str | Placeholder],
         encoder: json.JSONEncoder | None = None,
     ) -> None:
@@ -67,7 +68,7 @@ class CommandBuilder(Builder[Environment, None]):
         """
         super().__init__()
         self.cmd = cmd
-        self.source = source
+        self.source = PurePath(source)
         self.logger = logger
         self.encoder = encoder or GLOBAL_ENCODER
 
@@ -128,7 +129,7 @@ class SphinxBuilder(CommandBuilder):
 
     def __init__(
         self,
-        source: PurePath,
+        source: str | PurePath,
         *,
         args: Iterable[str] = [],
         encoder: json.JSONEncoder | None = None,
@@ -154,4 +155,3 @@ class SphinxBuilder(CommandBuilder):
         ]
         super().__init__(source, cmd, encoder=encoder)
         self.args = args
-        self.source = source
