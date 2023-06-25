@@ -289,11 +289,15 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         self.vcs = await self.init_vcs()
         self.targets = await self.vcs.retrieve(self.root)
 
-    async def run(self) -> None:
-        """Build all revisions."""
+    async def arun(self) -> None:
+        """Build all revisions (async)."""
         await self.init()
         await asyncio.gather(*(self.build_revision(rev) for rev in self.targets))
         await self.build_root()
+
+    def run(self) -> None:
+        """Build all revisions."""
+        asyncio.run(self.arun())
 
 
 JRT = TypeVar("JRT", bound=JSONable)
