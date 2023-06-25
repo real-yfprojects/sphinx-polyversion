@@ -329,7 +329,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         The builder to use.
     env : Callable[[Path, str], ENV]
         A factory producing the environments to use.
-    namer : Callable[[RT], str]
+    namer : Callable[[RT], str], optional
         A callable determining the name of a revision.
     selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]], optional
         The selector to use when either `env` or `builder` are a dict.
@@ -349,7 +349,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         vcs: VersionProvider[JRT],
         builder: Builder[ENV, Any] | Mapping[S, Builder[ENV, Any]],
         env: Callable[[Path, str], ENV] | Mapping[S, Callable[[Path, str], ENV]],
-        namer: Callable[[JRT], str],
+        namer: Callable[[JRT], str] | None = None,
         selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]]
         | None = None,
         encoder: Encoder | None = None,
@@ -371,7 +371,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
             The builder to use.
         env : Callable[[Path, str], ENV]
             A factory producing the environments to use.
-        namer : Callable[[JRT], str]
+        namer : Callable[[JRT], str], optional
             A callable determining the name of a revision.
         selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]], optional
             The selector to use when either `env` or `builder` are a dict.
@@ -413,7 +413,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         str
             The name
         """
-        return self.namer(rev)
+        return self.namer(rev) if self.namer else self.vcs.name(rev)
 
     async def init_vcs(self) -> VersionProvider[JRT]:
         """Prepare the building."""

@@ -360,6 +360,27 @@ class Git(VersionProvider[GitRef]):
 
         self._predicate = predicate
 
+    def name(self, revision: GitRef) -> str:
+        """
+        Get the (unique) name of a revision.
+
+        This name will usually be used for creating the subdirectories
+        of the revision.
+
+        Parameters
+        ----------
+        root : Path
+            The root path of the project.
+        revision : Any
+            The revision whose name is requested.
+
+        Returns
+        -------
+        str
+            The name of the revision.
+        """
+        return revision.name
+
     @staticmethod
     async def aroot(path: str | Path) -> Path:
         """

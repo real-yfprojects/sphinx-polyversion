@@ -11,6 +11,26 @@ RT = TypeVar("RT")
 class VersionProvider(Protocol[RT]):
     """Base for classes providing target revisions of the docs to build."""
 
+    def name(self, revision: RT) -> str:
+        """
+        Get the (unique) name of a revision.
+
+        This name will usually be used for creating the subdirectories
+        of the revision.
+
+        Parameters
+        ----------
+        root : Path
+            The root path of the project.
+        revision : Any
+            The revision whose name is requested.
+
+        Returns
+        -------
+        str
+            The name of the revision.
+        """
+
     @abstractmethod
     async def checkout(self, root: Path, dest: Path, revision: RT) -> None:
         """
