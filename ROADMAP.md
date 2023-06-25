@@ -25,25 +25,23 @@
 
 # 0.3.0
 
-- [ ] Unittests for 0.1.0
-- [ ] Unittests for 0.2.0
 - [x] Fix async file_predicate
 - [x] Fix Poetry env location
 - [x] Register hooks with Encoder
 
 # 0.4.0
 
-- [ ] Unittests for 0.3.0
-- [ ] Helper for customizing behaviour inside polyconf.py
-  - [ ] Helpers for dynamic build paths
-  - [ ] Helper for custom build command
-  - [ ] Helpers for custom subclasses
-- [ ] Extend API for conf.py with qualitiy of life improvements
+- [x] Helpers for dynamic build paths and etc.
+- [x] Sort tags
+  - [x] by date
+  - [x] by name
+- [x] Allow str in addition to Path in commonly used API
+- [x] Extend API for conf.py with quality of life improvements
 
 # 1.0.0-alpha1
 
 - [ ] High Test coverage
-  - [ ] Unittests for 0.4.0
+  - [ ] Unittests
   - [ ] Integration tests
 - [ ] README
 - [ ] Easily build local version and mocking
@@ -68,8 +66,8 @@
 - [ ] Only rebuild changed versions
 - [ ] Easy integration with ci
 - [ ] Github Action
-- [ ] Multiprocessing
 
 # Wishlist
 
+- Limit number of subprocesses to CPU count to optimize speed
 - typed overrides
