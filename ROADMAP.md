@@ -37,13 +37,15 @@
   - [x] by name
 - [x] Allow str in addition to Path in commonly used API
 - [x] Extend API for conf.py with quality of life improvements
+- [x] Make VCS provide a namer
+- [x] README
 
 # 1.0.0-alpha1
 
 - [ ] High Test coverage
   - [ ] Unittests
   - [ ] Integration tests
-- [ ] README
+- [ ] Enhance README
 - [ ] Easily build local version and mocking
 
 # 1.0.0
@@ -66,6 +68,7 @@
 - [ ] Only rebuild changed versions
 - [ ] Easy integration with ci
 - [ ] Github Action
+- [ ] Read conf file location from pyproject.toml?
 
 # Wishlist
 
