@@ -71,6 +71,7 @@ repos:
     rev: eef2a6bf05fac589e6cbfe17999711b2e258186e # frozen: v1.4.0
     hooks:
       - id: mypy
+        exclude: ^tests
         args: [--ignore-missing-imports]
 
   # format many other files with prettier

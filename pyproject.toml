@@ -35,6 +35,10 @@ mypy  = "^1.3.0"
 ruff  = "^0.0.272"
 black = "^23.3.0"
 
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.0"
+
+
 [tool.black]
 target-version = ['py38']
 
@@ -43,6 +47,7 @@ files              = "sphinx_polyversion/**.py"
 python_version     = "3.8"
 strict             = true
 allow_redefinition = true
+exclude            = ["^tests"]
 
 [[tool.mypy.overrides]]
 module                 = "virtualenv.*"
@@ -106,3 +111,6 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|dummy\\d*)$"
 [tool.ruff.pylint]
 # Allow more arguments for complexity check
 max-args = 8
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
