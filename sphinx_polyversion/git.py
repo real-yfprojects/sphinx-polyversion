@@ -9,6 +9,7 @@ import tarfile
 import tempfile
 from asyncio.subprocess import PIPE
 from datetime import datetime
+from functools import total_ordering
 from inspect import isawaitable
 from logging import getLogger
 from pathlib import Path, PurePath
@@ -20,7 +21,9 @@ from typing import (
     Callable,
     Coroutine,
     Iterable,
+    Iterator,
     NamedTuple,
+    Tuple,
     TypeVar,
     cast,
 )
@@ -250,6 +253,7 @@ class GitRefType(enum.Enum):
 
 
 @GLOBAL_DECODER.register
+@total_ordering
 class GitRef(NamedTuple):
     """A git ref representing a possible doc version."""
 
@@ -266,6 +270,30 @@ class GitRef(NamedTuple):
     @classmethod
     def _from_json_fields(cls, o: Any) -> GitRef:
         return cls(*o)
+
+    def __lt__(self, other: GitRef) -> bool:  # type: ignore[override]
+        """Lower than."""
+        return self.date < other.date
+
+
+def refs_by_type(refs: Iterator[GitRef]) -> Tuple[Iterator[GitRef], Iterator[GitRef]]:
+    """
+    Group refs by type.
+
+    Parameters
+    ----------
+    refs : Iterator[GitRef]
+        The refs to group.
+
+    Returns
+    -------
+    Tuple[Iterator[GitRef], Iterator[GitRef]]
+        A list of branch refs and a list of tag refs
+    """
+    return (
+        filter(lambda r: r.type_ == GitRefType.BRANCH, refs),
+        filter(lambda r: r.type_ == GitRefType.TAG, refs),
+    )
 
 
 def file_predicate(

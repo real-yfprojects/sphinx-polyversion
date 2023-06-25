@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 from sphinx_polyversion.json import GLOBAL_DECODER
@@ -78,3 +79,10 @@ def apply_overrides(namespace: dict[str, Any]) -> dict[str, Any]:
         overrides["OUTPUT_DIR"] = args.out
     namespace.update(overrides)
     return overrides
+
+
+def order_versions(name: str, form_regex: str) -> tuple[str, ...]:
+    match = re.fullmatch(form_regex, name)
+    if not match:
+        raise ValueError(f"Tag {name} doesn't match supplied format.")
+    return match.groups()
