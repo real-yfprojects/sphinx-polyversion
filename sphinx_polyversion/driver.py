@@ -8,6 +8,7 @@ import sys
 import tempfile
 from abc import ABCMeta, abstractmethod
 from contextlib import AsyncExitStack, asynccontextmanager
+from inspect import isawaitable
 from logging import getLogger
 from pathlib import Path
 from types import TracebackType
@@ -17,9 +18,11 @@ from typing import (
     AsyncContextManager,
     AsyncGenerator,
     Callable,
+    Coroutine,
     Generic,
     Iterable,
     List,
+    Mapping,
     Tuple,
     Type,
     TypeVar,
@@ -288,14 +291,21 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
 
 
 JRT = TypeVar("JRT", bound=JSONable)
+S = TypeVar("S")
 
 
-class DefaultDriver(Driver[JRT, ENV]):
+class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
     """
     Simple driver implementation.
 
     This convenience class allows creating a driver from a version provider,
     a builder and an Environment factory.
+
+    You can provide a dict for `env` or `builder` that maps revisions
+    to builders. In that case you must also provide a `selector` that is
+    used to determine the closest key in the dict for the revision to build.
+    This key is then used to get the builder or environment factory from the
+    dict provided.
 
     Parameters
     ----------
@@ -311,6 +321,8 @@ class DefaultDriver(Driver[JRT, ENV]):
         A factory producing the environments to use.
     namer : Callable[[RT], str]
         A callable determining the name of a revision.
+    selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]], optional
+        The selector to use when either `env` or `builder` are a dict.
     encoder : Encoder, optional
         The encoder to use for dumping `versions.json` to the output dir.
     static_dir : Path, optional
@@ -325,9 +337,11 @@ class DefaultDriver(Driver[JRT, ENV]):
         output_dir: Path,
         *,
         vcs: VersionProvider[JRT],
-        builder: Builder[ENV, Any],
-        env: Callable[[Path, str], ENV],
+        builder: Builder[ENV, Any] | Mapping[S, Builder[ENV, Any]],
+        env: Callable[[Path, str], ENV] | Mapping[S, Callable[[Path, str], ENV]],
         namer: Callable[[JRT], str],
+        selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]]
+        | None = None,
         encoder: Encoder | None = None,
         static_dir: Path | None = None,
         template_dir: Path | None = None,
@@ -349,6 +363,8 @@ class DefaultDriver(Driver[JRT, ENV]):
             A factory producing the environments to use.
         namer : Callable[[JRT], str]
             A callable determining the name of a revision.
+        selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]], optional
+            The selector to use when either `env` or `builder` are a dict.
         encoder : Encoder, optional
             The encoder to use for dumping `versions.json` to the output dir.
         static_dir : Path, optional
@@ -364,6 +380,12 @@ class DefaultDriver(Driver[JRT, ENV]):
         self.env_factory = env
         self.namer = namer
         self.encoder = encoder or GLOBAL_ENCODER
+
+        if isinstance(builder, dict) or isinstance(env, dict) and not selector:
+            raise ValueError(
+                "Must provide selector if a mapping is passed for `builder` or `env`."
+            )
+        self.selector = selector
 
     def name_for_rev(self, rev: JRT) -> str:
         """
@@ -401,6 +423,11 @@ class DefaultDriver(Driver[JRT, ENV]):
         -------
         Builder
         """
+        if isinstance(self.builder, Mapping):
+            r = self.selector(rev, self.builder.keys())  # type: ignore[misc]
+            if isawaitable(r):
+                r = await r
+            return self.builder[cast(S, r)]
         return self.builder
 
     async def init_environment(self, path: Path, rev: JRT) -> ENV:
@@ -421,7 +448,14 @@ class DefaultDriver(Driver[JRT, ENV]):
         -------
         Environment
         """
-        return self.env_factory(path, self.name_for_rev(rev))
+        if isinstance(self.env_factory, Mapping):
+            r = self.selector(rev, self.env_factory.keys())  # type: ignore[misc]
+            if isawaitable(r):
+                r = await r
+            f = self.env_factory[cast(S, r)]
+        else:
+            f = self.env_factory
+        return f(path, self.name_for_rev(rev))
 
     async def init_data(self, rev: JRT, env: ENV) -> dict[str, JSONable]:  # type: ignore[override]
         """

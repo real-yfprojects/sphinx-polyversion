@@ -22,6 +22,7 @@ from typing import (
     Iterable,
     NamedTuple,
     TypeVar,
+    cast,
 )
 
 from sphinx_polyversion.json import GLOBAL_DECODER
@@ -63,8 +64,37 @@ async def _get_git_root(directory: Path) -> Path:
 regex_ref = r"refs/(?P<type>\w+|remotes/(?P<remote>[^/]+))/(?P<name>\S+)"
 pattern_ref = re.compile(regex_ref)
 
+GIT_FORMAT_STRING = "%(objectname)\t%(refname)\t%(creatordate:iso)"
 
-async def _get_all_refs(repo: Path) -> AsyncGenerator[GitRef, None]:
+
+def _parse_ref(line: str) -> GitRef | None:
+    obj, ref, date_str = line.split("\t")
+    date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S %z")
+
+    match = pattern_ref.fullmatch(ref)
+    if not match:
+        logger.warning("Invalid ref %s", ref)
+        return None
+    name = match["name"]
+    type_str = match["type"]
+    remote = None
+    if type_str == "heads":
+        type_ = GitRefType.BRANCH
+    elif type_str == "tags":
+        type_ = GitRefType.TAG
+    elif match["remote"]:
+        type_ = GitRefType.BRANCH
+        remote = match["remote"]
+    else:
+        logger.info("Ignoring ref %s", ref)
+        return None
+
+    return GitRef(name, obj, ref, type_, date, remote)
+
+
+async def _get_all_refs(
+    repo: Path, pattern: str = "refs"
+) -> AsyncGenerator[GitRef, None]:
     """
     Get a list of refs (tags/branches) for a git repo.
 
@@ -72,10 +102,12 @@ async def _get_all_refs(repo: Path) -> AsyncGenerator[GitRef, None]:
     ----------
     repo : Path
         The repo to return the refs for
+    pattern : str
+        The pattern of refs to retrieve. Passed to `git for-each-ref`.
 
     Yields
     ------
-        GitRef: The refs
+    GitRef: The refs
 
     Raises
     ------
@@ -87,38 +119,36 @@ async def _get_all_refs(repo: Path) -> AsyncGenerator[GitRef, None]:
         "git",
         "for-each-ref",
         "--format",
-        "%(objectname)\t%(refname)\t%(creatordate:iso)",
-        "refs",
+        GIT_FORMAT_STRING,
+        pattern,
     )
     process = await asyncio.create_subprocess_exec(*cmd, stdout=PIPE, cwd=repo)
     out, err = await process.communicate()
     lines = out.decode().splitlines()
     for line in lines:
-        obj, ref, date_str = line.split("\t")
-        date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S %z")
+        ref = _parse_ref(line)
+        if ref is not None:
+            yield ref
 
-        match = pattern_ref.fullmatch(ref)
-        if not match:
-            logger.warning("Invalid ref %s", ref)
-            continue
-        name = match["name"]
-        type_str = match["type"]
-        remote = None
-        if type_str == "heads":
-            type_ = GitRefType.BRANCH
-        elif type_str == "tags":
-            type_ = GitRefType.TAG
-        elif match["remote"]:
-            type_ = GitRefType.BRANCH
-            remote = match["remote"]
-        else:
-            logger.info("Ignoring ref %s", ref)
 
-        yield GitRef(name, obj, ref, type_, date, remote)
+async def _is_ancestor(repo: Path, ancestor: str, descendant: str) -> bool:
+    cmd = (
+        "git",
+        "merge-base",
+        "--is-ancestor",
+        ancestor,
+        descendant,
+    )
+    process = await asyncio.create_subprocess_exec(*cmd, stdout=PIPE, cwd=repo)
+    out, err = await process.communicate()
+    rc = cast(int, process.returncode)
+    if rc > 1:
+        raise CalledProcessError(rc, " ".join(cmd), stderr=err)
+    return rc == 0
 
 
 async def _copy_tree(
-    repo: Path, ref: GitRef, dest: str | Path, buffer_size: int = 0
+    repo: Path, ref: str, dest: str | Path, buffer_size: int = 0
 ) -> None:
     """
     Copy the contents of a ref into a location in the file system.
@@ -127,7 +157,7 @@ async def _copy_tree(
     ----------
     repo : Path
         The repo of the ref
-    ref : GitRef
+    ref : str
         The ref
     dest : Union[str, Path]
         The destination to copy the contents to
@@ -142,7 +172,7 @@ async def _copy_tree(
 
     """
     # retrieve commit contents as tar archive
-    cmd = ("git", "archive", "--format", "tar", ref.obj)
+    cmd = ("git", "archive", "--format", "tar", ref)
     with tempfile.SpooledTemporaryFile(max_size=buffer_size) as f:
         process = await asyncio.create_subprocess_exec(
             *cmd, cwd=repo, stdout=f, stderr=PIPE
@@ -192,6 +222,14 @@ async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
 
 
 # -- VersionProvider API -----------------------------------------------------
+
+
+async def closest_tag(root: Path, ref: GitRef, tags: tuple[str]) -> str | None:
+    for tag in reversed(tags):
+        if await _is_ancestor(root, tag, ref.obj):
+            return tag
+    return None
+
 
 S = TypeVar("S")
 
@@ -341,7 +379,7 @@ class Git(VersionProvider[GitRef]):
         revision : Any
             The revision to extract.
         """
-        await _copy_tree(root, revision, dest, self.buffer_size)
+        await _copy_tree(root, revision.obj, dest, self.buffer_size)
 
     async def predicate(self, root: Path, ref: GitRef) -> bool:
         """
