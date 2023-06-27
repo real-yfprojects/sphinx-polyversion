@@ -19,9 +19,9 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-virtualenv = { version = "^20", optional = true }
+virtualenv = { version = ">=20", optional = true }
 python     = ">=3.8"
-jinja2     = { version = "^3", optional = true }
+jinja2     = { version = ">=3", optional = true }
 
 [tool.poetry.extras]
 virtualenv = ["virtualenv"]
