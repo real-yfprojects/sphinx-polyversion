@@ -40,13 +40,19 @@
 - [x] Make VCS provide a namer
 - [x] README
 
+# 0.5.0
+
+- [ ] Custom data format - depending on version
+- [ ] Verbosity flag
+- [ ] Easily build local version and mocking
+- [ ] Pre and post build commands
+
 # 1.0.0-alpha1
 
 - [ ] High Test coverage
   - [ ] Unittests
   - [ ] Integration tests
 - [ ] Enhance README
-- [ ] Easily build local version and mocking
 
 # 1.0.0
 

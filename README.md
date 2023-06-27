@@ -2,8 +2,8 @@
 
 Build multiple versions of your sphinx docs and merge them into one website.
 
-- Build isolation using venv, virtualenv or poetry
-- Git VCS support out of the box
+- Isolated builds using venv, virtualenv or poetry
+- git support
 - Build with `sphinx-build` or custom commands
 - Access and modify all versioning data inside `conf.py`
 - Concurrent builds
@@ -15,7 +15,7 @@ Build multiple versions of your sphinx docs and merge them into one website.
 - Implement subclasses in your configuration script to add support for other VCS, Project/dependency management tools, build tools and whatever you require
 - IDE integration and autocompletion
 
-Have a look at the [roadmap](./ROADMAP.md) to find out about the features planned.
+Have a look at the [roadmap](./ROADMAP.md) to find out about upcoming features.
 
 ## Example
 
@@ -29,7 +29,7 @@ load(globals())
 # This adds the following to the global scope
 # html_context = {
 #     "revisions": [GitRef('main', ...), GitRef('v6.8.9', ...), ...],
-#     "current": GitRef('v1.4.6'),
+#     "current": GitRef('v1.4.6', ...),
 # }
 
 # process the loaded version information as you wish
