@@ -271,7 +271,7 @@ class Poetry(VirtualPythonEnvironment):
             *cmd, cwd=self.path, env=env, stdout=PIPE, stderr=PIPE
         )
         out, err = await process.communicate()
-        out = out.decode()
+        out = out.decode().strip()
         err = err.decode()
 
         self.logger.debug("Venv location:\n %s", out)
