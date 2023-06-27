@@ -249,7 +249,7 @@ class GitRefType(enum.Enum):
 
     @classmethod
     def _from_json_fields(cls, o: str) -> GitRefType:
-        return cls(o)
+        return cls[o]
 
 
 @GLOBAL_DECODER.register
@@ -287,8 +287,8 @@ def refs_by_type(refs: Iterator[GitRef]) -> Tuple[Iterator[GitRef], Iterator[Git
 
     Returns
     -------
-    Tuple[Iterator[GitRef], Iterator[GitRef]]
-        A list of branch refs and a list of tag refs
+    branches : Iterator[GitRef]
+    tags : Iterator[GitRef]
     """
     return (
         filter(lambda r: r.type_ == GitRefType.BRANCH, refs),
