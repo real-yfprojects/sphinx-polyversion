@@ -276,7 +276,7 @@ class GitRef(NamedTuple):
         return self.date < other.date
 
 
-def refs_by_type(refs: Iterator[GitRef]) -> Tuple[Iterator[GitRef], Iterator[GitRef]]:
+def refs_by_type(refs: Iterator[GitRef]) -> Tuple[list[GitRef], list[GitRef]]:
     """
     Group refs by type.
 
@@ -287,12 +287,12 @@ def refs_by_type(refs: Iterator[GitRef]) -> Tuple[Iterator[GitRef], Iterator[Git
 
     Returns
     -------
-    branches : Iterator[GitRef]
-    tags : Iterator[GitRef]
+    branches : list[GitRef]
+    tags : list[GitRef]
     """
     return (
-        filter(lambda r: r.type_ == GitRefType.BRANCH, refs),
-        filter(lambda r: r.type_ == GitRefType.TAG, refs),
+        list(filter(lambda r: r.type_ == GitRefType.BRANCH, refs)),
+        list(filter(lambda r: r.type_ == GitRefType.TAG, refs)),
     )
 
 
