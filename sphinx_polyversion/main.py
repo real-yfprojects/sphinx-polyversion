@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Iterable
+from logging import StreamHandler
 from pathlib import Path
 from typing import Sequence
 
@@ -63,6 +64,13 @@ def get_parser() -> argparse.ArgumentParser:
         help="Override config options. Pass them as `key=value` pairs.",
         default={},
     )
+    parser.add_argument(
+        "-v",
+        "--verbosity",
+        action="count",
+        default=0,
+        help="Increase output verbosity (decreases minimum log level). The default log level is ERROR.",
+    )
     return parser
 
 
@@ -73,6 +81,14 @@ def main() -> None:
     args, _ = parser.parse_known_args()
     conf: Path = args.conf
 
+    # handle logging verbosity
+    from sphinx_polyversion import logger
+
+    handler = StreamHandler()
+    logger.addHandler(handler)
+    handler.setLevel(max(10, 40 - 10 * args.verbosity))
+
+    # run config file
     if not conf.is_file():
         parser.error("Config file doesn't exist.")
 
