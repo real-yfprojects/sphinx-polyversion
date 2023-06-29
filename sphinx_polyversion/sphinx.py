@@ -46,6 +46,10 @@ class CommandBuilder(Builder[Environment, None]):
         The command to run.
     encoder : json.JSONEncoder | None, optional
         The encoder to use for serializing the metadata, by default None
+    pre_cmd : Iterable[str | Placeholder], optional
+        Additional command to run before `cmd`.
+    post_cmd : Iterable[str | Placeholder], optional
+        Additional command to run after `cmd`.
     """
 
     def __init__(
@@ -53,6 +57,8 @@ class CommandBuilder(Builder[Environment, None]):
         source: str | PurePath,
         cmd: Iterable[str | Placeholder],
         encoder: json.JSONEncoder | None = None,
+        pre_cmd: Iterable[str | Placeholder] | None = None,
+        post_cmd: Iterable[str | Placeholder] | None = None,
     ) -> None:
         """
         Init the builder.
@@ -65,12 +71,18 @@ class CommandBuilder(Builder[Environment, None]):
             The command to run.
         encoder : json.JSONEncoder | None, optional
             The encoder to use for serializing the metadata, by default None
+        pre_cmd : Iterable[str | Placeholder], optional
+            Additional command to run before `cmd`.
+        post_cmd : Iterable[str | Placeholder], optional
+            Additional command to run after `cmd`.
         """
         super().__init__()
         self.cmd = cmd
         self.source = PurePath(source)
         self.logger = logger
         self.encoder = encoder or GLOBAL_ENCODER
+        self.pre_cmd = pre_cmd
+        self.post_cmd = post_cmd
 
     async def build(
         self, environment: Environment, output_dir: Path, data: JSONable
@@ -106,11 +118,24 @@ class CommandBuilder(Builder[Environment, None]):
 
         cmd = tuple(map(replace, self.cmd))
 
+        # pre hook
+        if self.pre_cmd:
+            out, err, rc = await environment.run(*map(replace, self.pre_cmd), env=env)
+            if rc:
+                raise BuildError from CalledProcessError(rc, " ".join(cmd), out, err)
+
+        # build command
         out, err, rc = await environment.run(*cmd, env=env)
 
         self.logger.debug("Installation output:\n %s", out)
         if rc:
             raise BuildError from CalledProcessError(rc, " ".join(cmd), out, err)
+
+        # post hook
+        if self.post_cmd:
+            out, err, rc = await environment.run(*map(replace, self.post_cmd), env=env)
+            if rc:
+                raise BuildError from CalledProcessError(rc, " ".join(cmd), out, err)
 
 
 class SphinxBuilder(CommandBuilder):
@@ -125,6 +150,10 @@ class SphinxBuilder(CommandBuilder):
         The arguments to pass to `sphinx-build`, by default []
     encoder : json.JSONEncoder | None, optional
         The encoder to use for serializing the metadata, by default None
+    pre_cmd : Iterable[str | Placeholder], optional
+        Additional command to run before `cmd`.
+    post_cmd : Iterable[str | Placeholder], optional
+        Additional command to run after `cmd`.
     """
 
     def __init__(
@@ -133,6 +162,8 @@ class SphinxBuilder(CommandBuilder):
         *,
         args: Iterable[str] = [],
         encoder: json.JSONEncoder | None = None,
+        pre_cmd: Iterable[str | Placeholder] | None = None,
+        post_cmd: Iterable[str | Placeholder] | None = None,
     ) -> None:
         """
         Init the builder.
@@ -145,6 +176,10 @@ class SphinxBuilder(CommandBuilder):
             The arguments to pass to `sphinx-build`, by default []
         encoder : json.JSONEncoder | None, optional
             The encoder to use for serializing the metadata, by default None
+        pre_cmd : Iterable[str | Placeholder], optional
+            Additional command to run before `cmd`.
+        post_cmd : Iterable[str | Placeholder], optional
+            Additional command to run after `cmd`.
         """
         cmd: Iterable[str | Placeholder] = [
             "sphinx-build",
@@ -153,5 +188,11 @@ class SphinxBuilder(CommandBuilder):
             Placeholder.SOURCE_DIR,
             Placeholder.OUTPUT_DIR,
         ]
-        super().__init__(source, cmd, encoder=encoder)
+        super().__init__(
+            source,
+            cmd,
+            encoder=encoder,
+            pre_cmd=pre_cmd,
+            post_cmd=post_cmd,
+        )
         self.args = args
