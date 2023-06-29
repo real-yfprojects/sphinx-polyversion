@@ -71,6 +71,13 @@ def get_parser() -> argparse.ArgumentParser:
         default=0,
         help="Increase output verbosity (decreases minimum log level). The default log level is ERROR.",
     )
+    parser.add_argument(
+        "-l",
+        "--local",
+        "--mock",
+        action="store_true",
+        help="Build the local version of your docs.",
+    )
     return parser
 
 

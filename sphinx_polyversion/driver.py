@@ -22,9 +22,11 @@ from typing import (
     Generic,
     Iterable,
     List,
+    Literal,
     Mapping,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -66,6 +68,8 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         The current working directory
     output_dir : Path
         The directory where to place the built docs.
+    mock : MockData[RT] | None | Literal[False], optional
+        Only build from local files and mock building all docs using the data provided.
 
     Methods
     -------
@@ -82,7 +86,13 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
     #: Revisions of successful builds.
     builds: List[RT]
 
-    def __init__(self, root: Path, output_dir: Path) -> None:
+    def __init__(
+        self,
+        root: Path,
+        output_dir: Path,
+        *,
+        mock: MockData[RT] | None | Literal[False] = None,
+    ) -> None:
         """
         Init the driver.
 
@@ -92,10 +102,13 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
             The current working directory
         output_dir : Path
             The directory where to place the built docs.
+        mock : MockData[RT] | None | Literal[False], optional
+            Only build from local files and mock building all docs using the data provided.
         """
         self.root = root
         self.output_dir = output_dir
         self.builds = []
+        self.mock = mock
 
     @abstractmethod
     def name_for_rev(self, rev: RT) -> str:
@@ -283,6 +296,48 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         of each revision. This method adds more to this root directory.
         """
 
+    async def build_local(self) -> None:
+        """
+        Build the local version only.
+
+        Raises
+        ------
+        ValueError
+            `self.mock` isn't set.
+        """
+        if not self.mock:
+            raise ValueError("Missing mock data.")
+
+        # process mock data
+        self.targets = self.builds = self.mock["revisions"]
+        rev = self.mock["current"]
+
+        if rev not in self.targets:
+            self.targets.append(rev)
+
+        # create builder
+        builder = await self.init_builder(rev)
+
+        # create temporary directory to use for building this version
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)
+            # copy source files
+            logger.info("Copying source files...")
+            shutil.copytree(self.root, path, symlinks=True, dirs_exist_ok=True)
+            # setup build environment (e.g. poetry/pip venv)
+            async with await self.init_environment(path, rev) as env:
+                # construct metadata to pass to the build process
+                data = await self.init_data(rev, env)
+                # build the docs
+                artifact = await builder.build(
+                    env, self.output_dir / "local", data=data
+                )
+
+        # call hook for success, on failure an exception will have been raised
+        self.build_succeeded(rev, artifact)
+
+        await self.build_root()
+
     async def init(self) -> None:
         """Prepare the building."""
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -296,8 +351,16 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         await self.build_root()
 
     def run(self) -> None:
-        """Build all revisions."""
-        asyncio.run(self.arun())
+        """Build all revisions or build from local files."""
+        if self.mock:
+            asyncio.run(self.build_local())
+        else:
+            asyncio.run(self.arun())
+
+
+class MockData(TypedDict, Generic[RT]):
+    current: RT
+    revisions: list[RT]
 
 
 JRT = TypeVar("JRT", bound=JSONable)
@@ -343,6 +406,8 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         The source directory for root level static files.
     template_dir : Path, optional
         The source directory for root level templates.
+    mock : MockData[RT] | None | Literal[False], optional
+        Only build from local files and mock building all docs using the data provided.
     """
 
     def __init__(
@@ -364,6 +429,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         encoder: Encoder | None = None,
         static_dir: StrPath | None = None,
         template_dir: StrPath | None = None,
+        mock: MockData[JRT] | None | Literal[False] = None,
     ) -> None:
         """
         Init the driver.
@@ -394,8 +460,10 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
             The source directory for root level static files.
         template_dir : Path, optional
             The source directory for root level templates.
+        mock : MockData[RT] | None | Literal[False], optional
+            Only build from local files and mock building all docs using the data provided.
         """
-        super().__init__(Path(root), Path(output_dir))
+        super().__init__(Path(root), Path(output_dir), mock=mock)
         self.static_dir = Path(static_dir) if static_dir is not None else static_dir
         self.template_dir = (
             Path(template_dir) if template_dir is not None else template_dir
@@ -567,6 +635,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
 
         # copy static files
         if self.static_dir and self.static_dir.exists():
+            logger.info("Copying static files to root directory...")
             for file in self.static_dir.rglob("*"):
                 shutil.copyfile(
                     file, shift_path(self.static_dir, self.output_dir, file)
@@ -579,6 +648,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
             context = {"revisions": self.builds, "repo": self.root}
 
         if self.template_dir and self.template_dir.is_dir():
+            logger.info("Rendering jinja2 templates...")
             import jinja2
 
             env = jinja2.Environment(

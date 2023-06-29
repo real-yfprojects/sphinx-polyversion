@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import enum
 import re
+import subprocess
 import tarfile
 import tempfile
 from asyncio.subprocess import PIPE
@@ -93,6 +94,30 @@ def _parse_ref(line: str) -> GitRef | None:
         return None
 
     return GitRef(name, obj, ref, type_, date, remote)
+
+
+def get_current_commit(repo: Path) -> str:
+    """
+    Determine the hash of the currently checkedout commit.
+
+    Parameters
+    ----------
+    repo : Path
+        The git repository.
+
+    Returns
+    -------
+    str
+        The hex obj hash of the commit.
+    """
+    cmd = (
+        "git",
+        "rev-parse",
+        "HEAD",
+    )
+
+    process = subprocess.run(cmd, stdout=PIPE, cwd=repo)
+    return process.stdout.decode().rstrip("\n")
 
 
 async def _get_all_refs(
