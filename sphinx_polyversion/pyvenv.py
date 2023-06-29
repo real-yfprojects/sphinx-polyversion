@@ -271,10 +271,10 @@ class Poetry(VirtualPythonEnvironment):
             *cmd, cwd=self.path, env=env, stdout=PIPE, stderr=PIPE
         )
         out, err = await process.communicate()
-        out = out.decode().strip()
+        out = out.decode().rstrip("\n")
         err = err.decode()
 
-        self.logger.debug("Venv location:\n %s", out)
+        self.logger.debug("Venv location: %s", out)
         if process.returncode != 0:
             self.logger.error("Error locating venv:\n %s", err)
             raise BuildError from CalledProcessError(
