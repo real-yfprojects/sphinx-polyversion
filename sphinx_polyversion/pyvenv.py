@@ -250,6 +250,13 @@ class Poetry(VirtualPythonEnvironment):
 
         env = os.environ.copy()
         env.pop("VIRTUAL_ENV", None)  # unset poetry env
+        env["POETRY_VIRTUALENVS_IN_PROJECT"] = "False"
+        venv_path = self.path / ".venv"
+        i = 0
+        while venv_path.exists():
+            venv_path = self.path / f".venv-{i}"
+            i += 1
+        env["POETRY_VIRTUALENVS_PATH"] = str(venv_path)
 
         process = await asyncio.create_subprocess_exec(
             *cmd, cwd=self.path, env=env, stdout=PIPE, stderr=PIPE
@@ -266,7 +273,7 @@ class Poetry(VirtualPythonEnvironment):
             )
 
         # locate venv
-        cmd: list[str] = ["poetry", "env", "info", "-p"]
+        cmd: list[str] = ["poetry", "env", "info", "--path"]
         process = await asyncio.create_subprocess_exec(
             *cmd, cwd=self.path, env=env, stdout=PIPE, stderr=PIPE
         )
