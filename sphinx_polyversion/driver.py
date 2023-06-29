@@ -311,11 +311,11 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
     This convenience class allows creating a driver from a version provider,
     a builder and an Environment factory.
 
-    You can provide a dict for `env` or `builder` that maps revisions
-    to builders. In that case you must also provide a `selector` that is
-    used to determine the closest key in the dict for the revision to build.
-    This key is then used to get the builder or environment factory from the
-    dict provided.
+    You can provide a dict for `env`, `data_factory` or `builder` that maps
+    revisions to builders. In that case you must also provide a `selector`
+    that is used to determine the closest key in the dict for the revision to
+    build. This key is then used to get the builder or environment factory
+    from the dict provided.
 
     Parameters
     ----------
@@ -329,6 +329,10 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         The builder to use.
     env : Callable[[Path, str], ENV]
         A factory producing the environments to use.
+    data_factory : Callable[[DefaultDriver[JRT, ENV, S], JRT, ENV], JSONable], optional
+        A callable returning the data to pass to the builder.
+    root_data_factory : Callable[[DefaultDriver[JRT, ENV, S]], dict[str, Any]], optional
+        A callable returning the variables to pass to the jinja templates.
     namer : Callable[[RT], str], optional
         A callable determining the name of a revision.
     selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]], optional
@@ -352,6 +356,11 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         namer: Callable[[JRT], str] | None = None,
         selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]]
         | None = None,
+        data_factory: Callable[[DefaultDriver[JRT, ENV, S], JRT, ENV], JSONable]
+        | Mapping[S, Callable[[DefaultDriver[JRT, ENV, S], JRT, ENV], JSONable]]
+        | None = None,
+        root_data_factory: Callable[[DefaultDriver[JRT, ENV, S]], dict[str, Any]]
+        | None = None,
         encoder: Encoder | None = None,
         static_dir: StrPath | None = None,
         template_dir: StrPath | None = None,
@@ -371,6 +380,10 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
             The builder to use.
         env : Callable[[Path, str], ENV]
             A factory producing the environments to use.
+        data_factory : Callable[[DefaultDriver[JRT, ENV, S], JRT, ENV], JSONable], optional
+            A callable returning the data to pass to the builder.
+        root_data_factory : Callable[[DefaultDriver[JRT, ENV, S]], dict[str, Any]], optional
+            A callable returning the variables to pass to the jinja templates.
         namer : Callable[[JRT], str], optional
             A callable determining the name of a revision.
         selector: Callable[[JRT, Iterable[S]], S | Coroutine[Any, Any, S]], optional
@@ -390,8 +403,10 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         self.vcs = vcs
         self.builder = builder
         self.env_factory = env
+        self.data_factory = data_factory
         self.namer = namer
         self.encoder = encoder or GLOBAL_ENCODER
+        self.root_data_factory = root_data_factory
 
         if isinstance(builder, dict) or isinstance(env, dict) and not selector:
             raise ValueError(
@@ -469,7 +484,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
             f = self.env_factory
         return f(path, self.name_for_rev(rev))
 
-    async def init_data(self, rev: JRT, env: ENV) -> dict[str, JSONable]:  # type: ignore[override]
+    async def init_data(self, rev: JRT, env: ENV) -> JSONable:
         """
         Get the serializable metadata object for a revision.
 
@@ -492,7 +507,14 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         JSONable
             The metadata to pass to the builder.
         """
-        return {"revisions": tuple(self.targets), "current": rev}
+        if not self.data_factory:
+            return {"revisions": tuple(self.targets), "current": rev}
+        if isinstance(self.data_factory, Mapping):
+            r = self.selector(rev, self.data_factory.keys())  # type: ignore[misc]
+            if isawaitable(r):
+                r = await r
+            return self.data_factory[cast(S, r)](self, rev, env)
+        return self.data_factory(self, rev, env)
 
     @asynccontextmanager
     async def tmp_dir(self, rev: JRT) -> AsyncGenerator[Path, None]:
@@ -551,6 +573,11 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
                 )
 
         # generate dynamic files from jinja templates
+        if self.root_data_factory:
+            context = self.root_data_factory(self)
+        else:
+            context = {"revisions": self.builds, "repo": self.root}
+
         if self.template_dir and self.template_dir.is_dir():
             import jinja2
 
@@ -560,6 +587,6 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
             )
             for template_path_str in env.list_templates():
                 template = env.get_template(template_path_str)
-                rendered = template.render(revisions=self.builds, repo=self.root)
+                rendered = template.render(context)
                 output_path = self.output_dir / template_path_str
                 output_path.write_text(rendered)
