@@ -22,7 +22,6 @@ from typing import (
     Generic,
     Iterable,
     List,
-    Literal,
     Mapping,
     Tuple,
     Type,
@@ -91,7 +90,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         root: Path,
         output_dir: Path,
         *,
-        mock: MockData[RT] | None | Literal[False] = None,
+        mock: MockData[RT] | None = None,
     ) -> None:
         """
         Init the driver.
@@ -350,9 +349,9 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         await asyncio.gather(*(self.build_revision(rev) for rev in self.targets))
         await self.build_root()
 
-    def run(self) -> None:
+    def run(self, mock: bool = False) -> None:
         """Build all revisions or build from local files."""
-        if self.mock:
+        if mock:
             asyncio.run(self.build_local())
         else:
             asyncio.run(self.arun())
@@ -429,7 +428,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         encoder: Encoder | None = None,
         static_dir: StrPath | None = None,
         template_dir: StrPath | None = None,
-        mock: MockData[JRT] | None | Literal[False] = None,
+        mock: MockData[JRT] | None = None,
     ) -> None:
         """
         Init the driver.
