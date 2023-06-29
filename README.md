@@ -9,6 +9,7 @@ Build multiple versions of your sphinx docs and merge them into one website.
 - Concurrent builds
 - Override build configuration from commandline easily
 - Render templates to the root directory containing the docs for each version
+- Build from local working tree easily while mocking version data
 - Not a sphinx extension -> standalone tool
 - Configuration in a python script
 - Highly customizable and scriptable through OOP
@@ -69,6 +70,20 @@ POETRY_ARGS = "--only sphinx --sync".split()
 #: Arguments to pass to `sphinx-build`
 SPHINX_ARGS = "-a -v".split()
 
+#: Mock data used for building local version
+MOCK_DATA = {
+    "revisions": [
+        GitRef("v1.8.0", "", "", GitRefType.TAG, datetime.fromtimestamp(0)),
+        GitRef("v1.9.3", "", "", GitRefType.TAG, datetime.fromtimestamp(1)),
+        GitRef("v1.10.5", "", "", GitRefType.TAG, datetime.fromtimestamp(2)),
+        GitRef("master", "", "", GitRefType.BRANCH, datetime.fromtimestamp(3)),
+        GitRef("dev", "", "", GitRefType.BRANCH, datetime.fromtimestamp(4)),
+        GitRef("some-feature", "", "", GitRefType.BRANCH, datetime.fromtimestamp(5)),
+    ],
+    "current": GitRef("local", "", "", GitRefType.BRANCH, datetime.fromtimestamp(6)),
+}
+MOCK = False
+
 # Load overrides read from commandline to global scope
 apply_overrides(globals())
 # Determine repository root directory
@@ -89,7 +104,8 @@ DefaultDriver(
     env=Poetry.factory(args=POETRY_ARGS),
     template_dir=root / src / "templates",
     static_dir=root / src / "static",
-).run()
+    mock=MOCK_DATA,
+).run(MOCK)
 ```
 
 Build your docs by running

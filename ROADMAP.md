@@ -42,10 +42,10 @@
 
 # 0.5.0
 
-- [ ] Custom data format - depending on version
-- [ ] Verbosity flag
-- [ ] Easily build local version and mocking
-- [ ] Pre and post build commands
+- [x] Custom data format - depending on version
+- [x] Verbosity flag
+- [x] Pre and post build commands
+- [x] Easily build local version and mocking
 
 # 1.0.0-alpha1
 
