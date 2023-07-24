@@ -18,7 +18,21 @@ Build multiple versions of your sphinx docs and merge them into one website.
 
 Have a look at the [roadmap](./ROADMAP.md) to find out about upcoming features.
 
-## Example
+## Installation
+
+This project is not yet released and therefore cannot be installed from pypi yet.
+
+```
+pip install sphinx-polyversion
+```
+
+```
+poetry add --group docs sphinx-polyversion
+```
+
+## Usage
+
+### Example
 
 Setup your sphinx docs in `docs/source/sphinx`. Add a `conf.py` file
 with the following to set directory:
@@ -114,16 +128,84 @@ Build your docs by running
 $ sphinx-polyversion docs/poly.py
 ```
 
-## Installation
-
-This project is not yet released and therefore cannot be installed from pypi yet.
+### Commandline Options
 
 ```
-pip install git+https://github.com/real-yfprojects/sphinx-polyversion@main
+usage: sphinx-polyversion [-h] [-o [OVERRIDE [OVERRIDE ...]]] [-v] [-l] conf [out]
+
+Build multiple versions of your sphinx docs and merge them into one site.
+
+positional arguments:
+  conf                  Polyversion config file to load. This must be a python file that can be evaluated.
+  out                   Output directory to build the merged docs to.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o [OVERRIDE [OVERRIDE ...]], --override [OVERRIDE [OVERRIDE ...]]
+                        Override config options. Pass them as `key=value` pairs.
+  -v, --verbosity       Increase output verbosity (decreases minimum log level). The default log level is ERROR.
+  -l, --local, --mock   Build the local version of your docs.
 ```
 
+### How To Build Versions Differently
+
+```py
+#: Mapping of revisions to changes in build parameters
+BUILDER = {
+    None: SphinxBuilder(Path("docs")),  # default
+    "v1.5.7": SphinxBuilder(Path("docs/source")),
+    "v2.0.0": CommandBuilder(
+        Path("docs/source"),
+        ["sphinx-autodoc", Placeholder.SOURCE_DIR, Placeholder.OUTPUT_DIR],
+    ),
+    "v2.4.0": CommandBuilder(
+        Path("docs/source/sphinx"),
+        ["sphinx-autodoc", Placeholder.SOURCE_DIR, Placeholder.OUTPUT_DIR],
+    ),
+}
+
+#: Mapping of revisions to changes in environment parameters
+ENVIRONMENT = {
+    None: Poetry.factory(args="--sync".split()),  # first version
+    "v1.5.7": Poetry.factory(args="--only sphinx --sync".split()),
+    "v1.8.2": Poetry.factory(args="--only dev --sync".split()),
+    "v3.0.0": Pip.factory(venv=Path(".venv"), args="-e . -r requirements.txt".split()),
+}
+
+# ...
+
+DefaultDriver(
+    # ...
+    builder=BUILDER,
+    env=ENVIRONMENT,
+    selector=partial(closest_tag, root),
+    # ...
+).run()
 ```
-poetry add --group docs git+https://github.com/real-yfprojects/sphinx-polyversion@main
+
+### Data Passed to Sphinx
+
+```py
+{"revisions": [GitRef(...), GitRef(...)], "current": GitRef(...)}
+```
+
+You can change the format by passing your own factory.
+
+```py
+def data(driver: DefaultDriver, rev: GitRef, env: Environment):
+    return {
+      "tags": list(filter(lambda r: r.type_ == GitRefType.TAG, driver.targets)),
+      "branches": list(filter(lambda r: r.type_ == GitRefType.BRANCH, driver.targets)),
+      "current": rev,
+    }
+
+# ...
+
+DefaultDriver(
+    # ...
+    data_factory=data,
+    # ...
+).run()
 ```
 
 ## Contributing
