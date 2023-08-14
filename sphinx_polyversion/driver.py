@@ -90,7 +90,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         root: Path,
         output_dir: Path,
         *,
-        mock: MockData[RT] | None = None,
+        mock: MockData | None = None,
     ) -> None:
         """
         Init the driver.
@@ -357,9 +357,9 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
             asyncio.run(self.arun())
 
 
-class MockData(TypedDict, Generic[RT]):
-    current: RT
-    revisions: list[RT]
+class MockData(TypedDict):
+    current: Any
+    revisions: list[Any]
 
 
 JRT = TypeVar("JRT", bound=JSONable)
@@ -428,7 +428,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         encoder: Encoder | None = None,
         static_dir: StrPath | None = None,
         template_dir: StrPath | None = None,
-        mock: MockData[JRT] | None = None,
+        mock: MockData | None = None,
     ) -> None:
         """
         Init the driver.
