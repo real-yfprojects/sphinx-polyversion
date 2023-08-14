@@ -35,18 +35,20 @@ class ParseKwargs(argparse.Action):
         setattr(namespace, self.dest, kwargs)
 
 
-def get_parser() -> argparse.ArgumentParser:
+def get_parser(expect_config: bool = True) -> argparse.ArgumentParser:
     """Define cmd line signature."""
     parser = argparse.ArgumentParser(
         description="Build multiple versions of your sphinx docs and merge them into one site."
     )
 
     # config file
-    parser.add_argument(
+    conf_arg = parser.add_argument(
         "conf",
         type=Path,
         help="Polyversion config file to load. This must be a python file that can be evaluated.",
     )
+    if not expect_config:
+        conf_arg.nargs = "?"
 
     # config options
     parser.add_argument(
