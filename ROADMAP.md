@@ -61,6 +61,10 @@
   - [ ] User guide
   - [ ] Subclassing guide
   - [ ] Reference
+    - [ ] Command line syntax
+    - [ ] API
+    - [ ] Abstract classes
+    - [ ] Implementations
   - [ ] Contributing
   - [ ] Workflows, Policies
   - [ ] Maintaining
@@ -71,6 +75,7 @@
 
 # 1.1.0
 
+- [ ] Caching (e.g. of poetry envs)
 - [ ] Only rebuild changed versions
 - [ ] Easy integration with ci
 - [ ] Github Action
