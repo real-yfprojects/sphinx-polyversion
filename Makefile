@@ -1,5 +1,8 @@
-.PHONY: lint
+.PHONY: lint docs
 
 lint:
-	ruff check .
-	mypy
+	poetry run ruff check .
+	poetry run mypy
+
+docs:
+	poetry run sphinx-polyversion docs/poly.py -l -vvv

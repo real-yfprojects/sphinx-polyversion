@@ -1,5 +1,7 @@
 # sphinx-polyversion
 
+<!-- description -->
+
 Build multiple versions of your sphinx docs and merge them into one website.
 
 - Isolated builds using venv, virtualenv or poetry
@@ -15,6 +17,8 @@ Build multiple versions of your sphinx docs and merge them into one website.
 - Highly customizable and scriptable through OOP
 - Implement subclasses in your configuration script to add support for other VCS, Project/dependency management tools, build tools and whatever you require
 - IDE integration and autocompletion
+
+<!-- end description -->
 
 Have a look at the [roadmap](./ROADMAP.md) to find out about upcoming features.
 

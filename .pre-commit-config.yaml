@@ -62,7 +62,7 @@ repos:
 
   # Format python code with black
   - repo: https://github.com/psf/black
-    rev: bf7a16254ec96b084a6caf3d435ec18f0f245cc7 # frozen: 23.3.0
+    rev: 193ee766ca496871f93621d6b58d57a6564ff81b # frozen: 23.7.0
     hooks:
       - id: black
 
@@ -71,7 +71,7 @@ repos:
     rev: eef2a6bf05fac589e6cbfe17999711b2e258186e # frozen: v1.4.0
     hooks:
       - id: mypy
-        exclude: ^tests
+        exclude: ^(tests|docs)
         args: [--ignore-missing-imports]
 
   # format many other files with prettier
