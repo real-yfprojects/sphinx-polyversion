@@ -259,11 +259,15 @@ class Poetry(VirtualPythonEnvironment):
         env["POETRY_VIRTUALENVS_PATH"] = str(venv_path)
 
         process = await asyncio.create_subprocess_exec(
-            *cmd, cwd=self.path, env=env, stdout=PIPE, stderr=PIPE
+            *cmd,
+            cwd=self.path,
+            env=env,
+            stdout=PIPE,
+            stderr=PIPE,
         )
         out, err = await process.communicate()
-        out = out.decode()
-        err = err.decode()
+        out = out.decode(errors="ignore")
+        err = err.decode(errors="ignore")
 
         self.logger.debug("Installation output:\n %s", out)
         if process.returncode != 0:
@@ -279,7 +283,7 @@ class Poetry(VirtualPythonEnvironment):
         )
         out, err = await process.communicate()
         out = out.decode().rstrip("\n")
-        err = err.decode()
+        err = err.decode(errors="ignore")
 
         self.logger.debug("Venv location: %s", out)
         if process.returncode != 0:
@@ -364,8 +368,8 @@ class Pip(VirtualPythonEnvironment):
             stderr=PIPE,
         )
         out, err = await process.communicate()
-        out = out.decode()
-        err = err.decode()
+        out = out.decode(errors="ignore")
+        err = err.decode(errors="ignore")
 
         self.logger.debug("Installation output:\n %s", out)
         if process.returncode != 0:

@@ -88,8 +88,8 @@ class Environment:
         process = await asyncio.create_subprocess_exec(*cmd, **kwargs)
         out, err = await process.communicate()
         if decode:
-            out = out.decode() if out is not None else None  # type: ignore[assignment]
-            err = err.decode() if err is not None else None  # type: ignore[assignment]
+            out = out.decode(errors="ignore") if out is not None else None  # type: ignore[assignment]
+            err = err.decode(errors="ignore") if err is not None else None  # type: ignore[assignment]
         return out, err, cast(int, process.returncode)
 
     @classmethod
