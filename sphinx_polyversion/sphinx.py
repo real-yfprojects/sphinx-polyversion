@@ -5,7 +5,7 @@ from __future__ import annotations
 import enum
 import os
 from logging import getLogger
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from subprocess import CalledProcessError
 from typing import TYPE_CHECKING, Any, Iterable
 
@@ -15,7 +15,6 @@ from sphinx_polyversion.json import GLOBAL_ENCODER, JSONable
 
 if TYPE_CHECKING:
     import json
-    from pathlib import Path
 
 logger = getLogger(__name__)
 
@@ -117,6 +116,9 @@ class CommandBuilder(Builder[Environment, None]):
         env["POLYVERSION_DATA"] = self.encoder.encode(data)
 
         cmd = tuple(map(replace, self.cmd))
+
+        # create output directory
+        output_dir.mkdir(exist_ok=True, parents=True)
 
         # pre hook
         if self.pre_cmd:
