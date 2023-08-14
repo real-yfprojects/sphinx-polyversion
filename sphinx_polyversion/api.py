@@ -77,6 +77,7 @@ def apply_overrides(namespace: dict[str, Any]) -> dict[str, Any]:
     overrides: dict[str, Any] = args.override
     if args.out:
         overrides["OUTPUT_DIR"] = args.out
+    overrides.setdefault("MOCK", False)
     if args.local:
         overrides["MOCK"] = True
     namespace.update(overrides)
