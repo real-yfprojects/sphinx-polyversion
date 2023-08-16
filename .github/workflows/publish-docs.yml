@@ -74,7 +74,7 @@ jobs:
       # Build in a reproducible location (allows caching)
       - name: Build using `sphinx_polyversion`
         run: >
-          poetry run sphinx-polyversion docs/poly.py build
+          poetry run sphinx-polyversion -vvv docs/poly.py build
 
       # Upload cache
       - name: Hash venv dir

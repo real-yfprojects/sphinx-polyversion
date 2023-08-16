@@ -117,7 +117,7 @@ html_theme_options = {
     # configure 'edit source' button
     "source_repository": repository,
     "source_branch": current.obj,
-    "source_directory": "docs/",
+    "source_directory": "docs/sphinx/",
     # Add link to repository
     "footer_icons": [
         {
