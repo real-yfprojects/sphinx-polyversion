@@ -315,10 +315,22 @@ Overriding config options
 
 You can override the defaults set in `poly.py` by specifying values on the
 commandline. Specifying an output location will override :code:`OUTPUT_DIR` while
-specifying `--local` will set :code:`MOCK` to `True`.
+specifying :code:`--local` will set :code:`MOCK` to :code:`True`.
 All other variables can be overidden through the :code:`-o` flag. You can
 override the arguments passed to `sphinx-build` by entering the following:
 
 .. code-block:: bash
 
     sphinx-polyversion docs/poly.py -o SPHINX_BUILD='-T -v'
+
+
+Adding a version picker to the docs
+-----------------------------------
+
+There are plenty of ways how to add a widget to your rendered documentation that allows
+the user to select the version to view. Some themes might come with a version picker build-in
+while for the others you have to add one yourself. Usually you can leverage sphinx template
+system for that. For a reference you can have a look how this documentation implemented
+the version picker.
+
+.. TODO link relevant code
