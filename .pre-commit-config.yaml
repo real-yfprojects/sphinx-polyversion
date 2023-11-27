@@ -62,7 +62,7 @@ repos:
 
   # Format python code with black
   - repo: https://github.com/psf/black
-    rev: 193ee766ca496871f93621d6b58d57a6564ff81b # frozen: 23.7.0
+    rev: 2a1c67e0b2f81df602ec1f6e7aeb030b9709dc7c # frozen: 23.11.0
     hooks:
       - id: black
 
