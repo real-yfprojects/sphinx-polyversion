@@ -233,7 +233,7 @@ class Poetry(VirtualPythonEnvironment):
         super().__init__(path, name, path / ".venv")
         self.args = args
 
-    async def __aenter__(self) -> Poetry:
+    async def __aenter__(self) -> Self:
         """
         Set the poetry venv up.
 
@@ -344,7 +344,7 @@ class Pip(VirtualPythonEnvironment):
         super().__init__(path, name, venv, creator=creator)
         self.args = args
 
-    async def __aenter__(self) -> Pip:
+    async def __aenter__(self) -> Self:
         """
         Set the venv up.
 

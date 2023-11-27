@@ -116,7 +116,7 @@ def get_current_commit(repo: Path) -> str:
         "HEAD",
     )
 
-    process = subprocess.run(cmd, stdout=PIPE, cwd=repo)
+    process = subprocess.run(cmd, stdout=PIPE, cwd=repo, check=True)
     return process.stdout.decode().rstrip("\n")
 
 
