@@ -73,7 +73,7 @@ class VirtualenvWrapper:
         """Build the venv at the given location in a separate thread."""
         from virtualenv import cli_run
 
-        await to_thread(cli_run, [*self.args, path])
+        await to_thread(cli_run, [*self.args, str(path)])
 
 
 class VirtualPythonEnvironment(Environment):

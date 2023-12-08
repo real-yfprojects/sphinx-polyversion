@@ -1,3 +1,5 @@
+"""Test encoding and deconding of python types and objects to  the json format."""
+
 from datetime import datetime
 
 from sphinx_polyversion.git import GitRef, GitRefType
@@ -5,7 +7,10 @@ from sphinx_polyversion.json import Decoder, Encoder, std_hook
 
 
 class TestEncoder:
+    """Unittests for the `Encoder` class."""
+
     def test_register_hook(self):
+        """Test that register() adds a hook to the encoder's hooks dictionary."""
         encoder = Encoder()
 
         assert encoder.hooks == set()
@@ -20,6 +25,7 @@ class TestEncoder:
         assert len(encoder.hooks) == 2
 
     def test_register_type(self):
+        """Test that register() adds a type to the encoder's hooks dictionary."""
         encoder = Encoder()
 
         assert encoder.hooks == set()
@@ -34,6 +40,7 @@ class TestEncoder:
         assert len(encoder.hooks) == 2
 
     def test_determine_classname(self):
+        """Test that determine_classname() returns the expected class name for a given object."""
         encoder = Encoder()
 
         assert (
@@ -46,46 +53,118 @@ class TestEncoder:
 
         assert encoder.determine_classname(Path, instance=False) == "pathlib.Path"
 
-    def test_transform_hook(self):
-        # test transforming json hook
-        pass
+        assert (
+            encoder.determine_classname(datetime, instance=False) == "datetime.datetime"
+        )
+        assert encoder.determine_classname(datetime(2023, 1, 1)) == ".datetime"
 
-    def test_transform_class(self):
-        # test transforming transformable (results in json class)
-        pass
+    def test_transform_hook(self):
+        """Test transforming hook."""
+        encoder = Encoder()
+        encoder.register(std_hook)
+
+        assert encoder.transform(datetime(2023, 12, 2)) == {
+            "__jsonhook__": (
+                "sphinx_polyversion.json.std_hook",
+                ".datetime",
+                "2023-12-02T00:00:00",
+            )
+        }
+
+    def test_transform_class(self) -> None:
+        """Test transforming the `Transformable` class.."""
+        encoder = Encoder()
+        assert encoder.transform(GitRef("master", "3434", "", None, None)) == {
+            "__jsonclass__": (
+                "sphinx_polyversion.git.GitRef",
+                ["master", "3434", "", None, None, None],
+            )
+        }
 
     def test_transform_dict(self):
-        # test recursive calls in case of dict
-        pass
+        """Test that transform() returns the expected dictionary for a given dictionary with nested objects."""
+        encoder = Encoder()
+        assert encoder.transform({"ref": GitRef("master", "3434", "", None, None)}) == {
+            "ref": {
+                "__jsonclass__": (
+                    "sphinx_polyversion.git.GitRef",
+                    ["master", "3434", "", None, None, None],
+                )
+            }
+        }
 
     def test_transform_list(self):
-        # test recursive calls in case of list
-        pass
+        """Test that transform() returns the expected list for a given list with nested objects."""
+        encoder = Encoder()
+        assert encoder.transform([GitRef("master", "3434", "", None, None)]) == [
+            {
+                "__jsonclass__": (
+                    "sphinx_polyversion.git.GitRef",
+                    ["master", "3434", "", None, None, None],
+                )
+            }
+        ]
 
     def test_transform_any(self):
-        # test it passes unknown objects through
-        pass
+        """Test that transform() returns the input object for an unknown object."""
+        encoder = Encoder()
+        o = object()
+        assert encoder.transform(o) == o
 
     def test_encode(self):
-        # test encoding one big object containing
-        # dict, list, transformable, hook and some standard datatypes
-        pass
+        """
+        Test that encode() returns the expected JSON string for a given object.
+
+        This uses dict, list, transformable, hook and some standard datatypes
+        """
+        encoder = Encoder()
+        encoder.register(std_hook)
+        obj = {
+            "ref": GitRef(
+                "master",
+                "3434",
+                "refs/tags/v1.0.0",
+                GitRefType.TAG,
+                datetime(200, 2, 6, 6, 3, 6),
+            ),
+            "date": datetime(2023, 12, 2),
+            "list": [1, 2, 3],
+            "dict": {"a": 1, "b": 2},
+        }
+        assert (
+            encoder.encode(obj)
+            == '{"ref": {"__jsonclass__": ["sphinx_polyversion.git.GitRef", ["master", "3434", "refs/tags/v1.0.0", {"__jsonclass__": ["sphinx_polyversion.git.GitRefType", "TAG"]}, {"__jsonhook__": ["sphinx_polyversion.json.std_hook", ".datetime", "0200-02-06T06:03:06"]}, null]]}, "date": {"__jsonhook__": ["sphinx_polyversion.json.std_hook", ".datetime", "2023-12-02T00:00:00"]}, "list": [1, 2, 3], "dict": {"a": 1, "b": 2}}'
+        )
 
 
 class TestDecoder:
+    """Unittests for the `Decoder` class."""
+
     def test_register_hook(self):
-        # register and check whether hook is in hooks property
-        pass
+        """Test that register() adds a hook to the decoder's hooks dictionary."""
+        decoder = Decoder()
+        decoder.register(std_hook)
+        assert std_hook in decoder.hooks
 
     def test_register_type(self):
-        # register and check whether type is in `registered_types` property
-        pass
+        """Test that register() adds a type to the decoder's registered_types dictionary."""
+        decoder = Decoder()
+        decoder.register(GitRefType)
+        assert GitRefType in decoder.registered_types
 
     def test_register_from(self):
-        # test that both decoders know the same hooks and types
-        pass
+        """Test that register_from() adds the same hooks and types to both the encoder and decoder."""
+        decoder_1 = Decoder()
+        decoder_1.register(GitRef, GitRefType)
+        assert decoder_1.registered_types == [GitRef, GitRefType]
+
+        decoder_2 = Decoder()
+        decoder_2.register_from(decoder_1)
+        assert GitRef in decoder_2.registered_types
+        assert GitRefType in decoder_2.registered_types
 
     def test_determine_classname(self):
+        """Test that determine_classname() returns the expected class name for a given object."""
         decoder = Decoder()
 
         assert decoder.determine_classname(GitRef) == "sphinx_polyversion.git.GitRef"
@@ -93,6 +172,27 @@ class TestDecoder:
         from pathlib import Path
 
         assert decoder.determine_classname(Path) == "pathlib.Path"
+
+    def test_decode(self):
+        """Test that decode() returns the expected object for a given JSON string."""
+        obj = {
+            "ref": GitRef(
+                "master",
+                "3434",
+                "refs/tags/v1.0.0",
+                GitRefType.TAG,
+                datetime(200, 2, 6, 6, 3, 6),
+            ),
+            "date": datetime(2023, 12, 2),
+            "list": [1, 2, 3],
+            "dict": {"a": 1, "b": 2},
+        }
+        encoded = '{"ref": {"__jsonclass__": ["sphinx_polyversion.git.GitRef", ["master", "3434", "refs/tags/v1.0.0", {"__jsonclass__": ["sphinx_polyversion.git.GitRefType", "TAG"]}, {"__jsonhook__": ["sphinx_polyversion.json.std_hook", ".datetime", "0200-02-06T06:03:06"]}, null]]}, "date": {"__jsonhook__": ["sphinx_polyversion.json.std_hook", ".datetime", "2023-12-02T00:00:00"]}, "list": [1, 2, 3], "dict": {"a": 1, "b": 2}}'
+
+        decoder = Decoder()
+        decoder.register(std_hook)
+        decoder.register(GitRef, GitRefType)
+        assert decoder.decode(encoded) == obj
 
 
 class TestStd_Hook:

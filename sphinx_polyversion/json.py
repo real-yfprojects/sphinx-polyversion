@@ -385,8 +385,8 @@ class Decoder(json.JSONDecoder):
 
     def register_from(self, decoder: Decoder) -> None:
         """Register all types registered by another decoder."""
-        self.register(*self.registered_types)
-        self.register(*self.hooks)
+        self.register(*decoder.registered_types)
+        self.register(*decoder.hooks)
 
     @overload
     def register(self, t: Type[T], /) -> Type[T]:

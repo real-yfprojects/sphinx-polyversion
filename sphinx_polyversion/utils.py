@@ -13,7 +13,8 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Iterator,
+    Iterable,
+    Set,
     TypeVar,
     cast,
 )
@@ -113,7 +114,7 @@ def import_file(path: Path) -> Any:
     return module
 
 
-async def async_all(awaitables: Iterator[Awaitable[Any]]) -> bool:
+async def async_all(awaitables: Iterable[Awaitable[Any]]) -> bool:
     """
     Return True if all awaitables return True.
 
@@ -131,7 +132,7 @@ async def async_all(awaitables: Iterator[Awaitable[Any]]) -> bool:
         Whether all awaitables returned True.
     """
     tasks = cast(
-        asyncio.Task,  # type: ignore[type-arg]
+        Set["asyncio.Task[Any]"],
         {
             asyncio.create_task(aws) if asyncio.iscoroutine(aws) else aws
             for aws in awaitables

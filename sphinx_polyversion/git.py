@@ -253,6 +253,23 @@ async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
 
 
 async def closest_tag(root: Path, ref: GitRef, tags: tuple[str]) -> str | None:
+    """
+    Find the closest ancestor to a given ref.
+
+    Parameters
+    ----------
+    root : Path
+        The repository root.
+    ref : GitRef
+        The ref to find the ancestor for.
+    tags : tuple[str]
+        A list of git references to map to.
+
+    Returns
+    -------
+    str | None
+        The closest ancestor or None if no ancestor was found.
+    """
     for tag in reversed(tags):
         if await _is_ancestor(root, tag, ref.obj):
             return tag

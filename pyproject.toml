@@ -25,8 +25,8 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-virtualenv = { version = ">=20", optional = true }
 python     = ">=3.8"
+virtualenv = { version = ">=20", optional = true }
 jinja2     = { version = ">=3", optional = true }
 
 [tool.poetry.extras]
@@ -42,7 +42,9 @@ ruff  = "^0.0.272"
 black = "^23.3.0"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.4.0"
+pytest         = "^7.4.0"
+pytest-asyncio = "^0.21.1"
+pytest-cov     = "^4.1.0"
 
 [tool.poetry.group.docs.dependencies]
 sphinx                           = "^5.3.0"
@@ -52,11 +54,11 @@ sphinx-rtd-theme                 = "^1.2.0"
 myst-parser                      = "^1.0.0"
 sphinx-notfound-page             = "^0.8.3"
 sphinx-copybutton                = "^0.5.2"
-furo = "^2023.3.27"
-sphinxext-opengraph = "^0.8.2"
-sphinx-autobuild = "^2021.3.14"
-sphinx-design = "^0.4.1"
-jinja2 = "^3.1.2"
+furo                             = "^2023.3.27"
+sphinxext-opengraph              = "^0.8.2"
+sphinx-autobuild                 = "^2021.3.14"
+sphinx-design                    = "^0.4.1"
+jinja2                           = "^3.1.2"
 
 [tool.black]
 target-version = ['py38']
@@ -127,13 +129,20 @@ line-length = 88
 # Allow unused variables when underscore-prefixed or of form `dummyN`.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|dummy\\d*)$"
 
-# Less strict rules for docs/*
+# Less strict rules for docs/* and tests/*.
 [tool.ruff.per-file-ignores]
-"docs/*" = ["PLR", "D1", "PTH", "INP"]
+"docs/*"  = ["PLR", "D1", "PTH", "INP"]
+"tests/*" = ["PLR2004"]
 
 [tool.ruff.pylint]
 # Allow more arguments for complexity check
 max-args = 8
 
 [tool.pytest.ini_options]
-addopts = ["--import-mode=importlib"]
+addopts = [
+    "--import-mode=importlib",
+    "--cov=sphinx_polyversion",
+    "--cov-report=lcov",
+    "--cov-report=term-missing",
+]
+testpaths = ["tests"]
