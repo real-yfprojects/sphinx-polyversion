@@ -17,8 +17,18 @@ jobs:
         uses: ./.github/actions/setup
         with:
           setup-pre-commit: true
-          install-options: --only lint --all-extras
+          cache-python: true
+          install-options: --only lint --all-extras --sync
 
+      # for some reason poetry won't install the extras
+      - name: Install extras
+        run: poetry install --all-extras
+
+      # Run pre-commit hooks
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+      # Run mypy since it cannot check imports in pre-commit hooks
       - name: Run linters
         run: make lint
 
@@ -65,7 +75,7 @@ jobs:
         id: setup
         uses: ./.github/actions/setup
         with:
-          install-options: --only test ${{ matrix.extras && format('--extras "{0}"', matrix.extras) || '' }}
+          install-options: --only test --sync ${{ matrix.extras && format('--extras "{0}"', matrix.extras) || '' }}
 
       - name: Run Tests
         run: make test
@@ -80,7 +90,8 @@ jobs:
         id: setup
         uses: ./.github/actions/setup
         with:
-          install-options: --only docs
+          cache-python: true
+          install-options: --only docs --sync
 
       - name: Build Docs
         run: make docs
