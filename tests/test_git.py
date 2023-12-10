@@ -1,9 +1,12 @@
 """Test the `Git` class."""
 
+from __future__ import annotations
+
+import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Mapping, Tuple
 
 import pytest
 
@@ -16,11 +19,79 @@ from sphinx_polyversion.git import (
     file_predicate,
 )
 
+# Fragments of the following git logic are sourced from
+# https://github.com/pre-commit/pre-commit/blob/main/pre_commit/git.py
+#
+# Original Copyright (c) 2014 pre-commit dev team: Anthony Sottile, Ken Struys
+# MIT License
+
+# prevents errors on windows
+NO_FS_MONITOR = ("-c", "core.useBuiltinFSMonitor=false")
+PARTIAL_CLONE = ("-c", "extensions.partialClone=true")
+
+
+def no_git_env(_env: Mapping[str, str] | None = None) -> dict[str, str]:
+    """
+    Clear problematic git env vars.
+
+    Git sometimes sets some environment variables that alter its behaviour.
+    You can pass `os.environ` to this method and then pass its return value
+    to `subprocess.run` as a environment.
+
+    Parameters
+    ----------
+    _env : Mapping[str, str] | None, optional
+        A dictionary of env vars, by default None
+
+    Returns
+    -------
+    dict[str, str]
+        The same dictionary but without the problematic vars
+    """
+    # Too many bugs dealing with environment variables and GIT:
+    # https://github.com/pre-commit/pre-commit/issues/300
+    # In git 2.6.3 (maybe others), git exports GIT_WORK_TREE while running
+    # pre-commit hooks
+    # In git 1.9.1 (maybe others), git exports GIT_DIR and GIT_INDEX_FILE
+    # while running pre-commit hooks in submodules.
+    # GIT_DIR: Causes git clone to clone wrong thing
+    # GIT_INDEX_FILE: Causes 'error invalid object ...' during commit
+    _env = _env if _env is not None else os.environ
+    return {
+        k: v
+        for k, v in _env.items()
+        if not k.startswith("GIT_")
+        or k.startswith(("GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_"))
+        or k
+        in {
+            "GIT_EXEC_PATH",
+            "GIT_SSH",
+            "GIT_SSH_COMMAND",
+            "GIT_SSL_CAINFO",
+            "GIT_SSL_NO_VERIFY",
+            "GIT_CONFIG_COUNT",
+            "GIT_HTTP_PROXY_AUTHMETHOD",
+            "GIT_ALLOW_PROTOCOL",
+            "GIT_ASKPASS",
+        }
+    }
+
 
 @pytest.fixture()
 def git_testrepo(tmp_path: Path) -> Tuple[Path, List[GitRef]]:
     """Create a git repository for testing."""
-    subprocess.run(["git", "init"], cwd=tmp_path)
+    git = ("git", *NO_FS_MONITOR)
+    env = no_git_env()
+
+    def run_git(*args: str) -> None:
+        subprocess.run(git + args, cwd=tmp_path, env=env)
+
+    # init repo
+    run_git("init")
+    run_git("config", "user.email", "example@example.com")
+    run_git("config", "user.name", "example")
+    run_git("config", "commit.gpgsign", "false")
+    run_git("config", "init.defaultBranch", "main")
 
     # create some files and directories to commit
     tmp_path.joinpath("test.txt").write_text("test")
@@ -29,11 +100,11 @@ def git_testrepo(tmp_path: Path) -> Tuple[Path, List[GitRef]]:
     tmp_path.joinpath("dir1", "file1.txt").write_text("file1")
     tmp_path.joinpath("dir2", "file3.txt").write_text("file3")
 
-    subprocess.run(["git", "add", "."], cwd=tmp_path)
-    subprocess.run(["git", "commit", "-m", "test"], cwd=tmp_path)
+    run_git("add", ".")
+    run_git("commit", "-m", "test")
 
     # create a branch
-    subprocess.run(["git", "branch", "dev"], cwd=tmp_path)
+    run_git("branch", "dev")
 
     # create changes to commit
     tmp_path.joinpath("test.txt").write_text("test2")
@@ -41,25 +112,25 @@ def git_testrepo(tmp_path: Path) -> Tuple[Path, List[GitRef]]:
     tmp_path.joinpath("dir1", "file1.txt").write_text("file1a")
     tmp_path.joinpath("dir2", "file3.txt").write_text("file3a")
 
-    subprocess.run(["git", "add", "."], cwd=tmp_path)
-    subprocess.run(["git", "commit", "-m", "test2"], cwd=tmp_path)
+    run_git("add", ".")
+    run_git("commit", "-m", "test2")
 
     # create a tag
-    subprocess.run(["git", "tag", "1.0", "-m", ""], cwd=tmp_path)
+    run_git("tag", "1.0", "-m", "")
 
     # commit some more changes
     tmp_path.joinpath("test.txt").write_text("test3")
     tmp_path.joinpath("dir1", "file2.txt").write_text("file2a")
     tmp_path.joinpath("dir1", "file1.txt").write_text("file1b")
 
-    subprocess.run(["git", "add", "."], cwd=tmp_path)
-    subprocess.run(["git", "commit", "-m", "test3"], cwd=tmp_path)
+    run_git("add", ".")
+    run_git("commit", "-m", "test3")
 
     # create another branch
-    subprocess.run(["git", "branch", "feature"], cwd=tmp_path)
+    run_git("branch", "feature")
 
     # tag the latest commit
-    subprocess.run(["git", "tag", "2.0", "-m", ""], cwd=tmp_path)
+    run_git("tag", "2.0", "-m", "")
 
     p = subprocess.run(
         ["git", "for-each-ref", "--format=%(objectname) %(refname)"],
