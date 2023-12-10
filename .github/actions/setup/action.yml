@@ -47,10 +47,10 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     # list cached envs
-    - name: Cached envs
-      shell: bash
-      run: ls $(poetry config virtualenvs.path)
-      if: inputs.cache-python == 'true'
+    # - name: Cached envs
+    #   shell: bash
+    #   run: ls $(poetry config virtualenvs.path)
+    #   if: inputs.cache-python == 'true'
 
     # Install deps
     - name: Install project dependencies
