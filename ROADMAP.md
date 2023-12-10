@@ -50,28 +50,38 @@
 # 1.0.0-alpha1
 
 - [ ] High Test coverage
-  - [ ] Unittests
-  - [ ] Integration tests
+  - [x] Unittests
+  - [x] Integration tests
 - [ ] Enhance README
+  - [ ] Comparison to alternatives
 
 # 1.0.0
 
-- [ ] Contributing Standards
 - [ ] Extensive Documentation
   - [ ] User guide
+    - [ ] Use different setups depending on the version
   - [ ] Subclassing guide
   - [ ] Reference
     - [ ] Command line syntax
     - [ ] API
     - [ ] Abstract classes
     - [ ] Implementations
+- [ ] Contributing Standards
   - [ ] Contributing
   - [ ] Workflows, Policies
   - [ ] Maintaining
 - [ ] CI
-- [ ] Docs on Github Pages
+  - [ ] Coverage badge
+  - [ ] Test badge
+  - [ ] Change in coverage
+  - [ ] Highlight linting problems in PR
+  - [ ] Higlight uncovered code in PR
+  - [x] Tests
+  - [x] Doc preview
+  - [x] Linting
+- [x] Docs on Github Pages
 
-- [ ] PyPi package
+- [x] PyPi package
 
 # 1.1.0
 
