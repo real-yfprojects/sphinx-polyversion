@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: f71fa2c1f9cf5cb705f73dffe4b21f7c61470ba9 # frozen: v4.4.0
+    rev: c4a0b883114b00d8d76b479c820ce7950211c99b # frozen: v4.5.0
     hooks:
       # check file system problems
       - id: check-case-conflict
@@ -24,7 +24,7 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/python-poetry/poetry
-    rev: "cacd43c076748411a759c65dd46858cd8b7ef3b3" # frozen: 1.5.0
+    rev: "ceeb1892a1f7456a65cd847ad36d740a577dee5e" # frozen: 1.7.0
     hooks:
       - id: poetry-check
       - id: poetry-lock
@@ -45,7 +45,7 @@ repos:
 
   # Enforce frozen revisions in `.pre-commit-config.yaml`
   - repo: https://github.com/real-yfprojects/check-pre-commit-config
-    rev: 27c71bd46101a7de517863033531963b7d04dee2 # frozen: v1.0.0-alpha3
+    rev: ec697f7fda57bd81b86556212539e22f03aa86d9 # frozen: v1.0.0-alpha4
     hooks:
       - id: check-frozen
         args:
@@ -68,7 +68,7 @@ repos:
 
   # Static type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: eef2a6bf05fac589e6cbfe17999711b2e258186e # frozen: v1.4.0
+    rev: 4daa14b20c0f48f472528c2b5f5bca28a18a7ce0 # frozen: v1.7.1
     hooks:
       - id: mypy
         exclude: ^(tests|docs)
@@ -76,13 +76,13 @@ repos:
 
   # format many other files with prettier
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "6fd1ced85fc139abd7f5ab4f3d78dab37592cd5e" # frozen: v3.0.0-alpha.9-for-vscode
+    rev: "fc6ac4eb41985d70a660d6f8e69048479688d26c" # frozen: v4.0.0-alpha.4
     hooks:
       - id: prettier
         exclude: ^docs/source/(_polyversion/|_)templates/
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: b752273289ecf6d81dbbe6fc8284f2689ef8514d # frozen: v0.13
+    rev: 57fe0d1748f3ace002f5599289f5a53330555b20 # frozen: v0.15
     hooks:
       - id: validate-pyproject
         files: pyproject.toml$
