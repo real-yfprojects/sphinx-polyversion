@@ -1,12 +1,12 @@
 """Test the `utils` submodule."""
 
 import asyncio
-from pathlib import PurePath
+from pathlib import Path, PurePath
 from typing import TypeVar
 
 import pytest
 
-from sphinx_polyversion.utils import async_all, shift_path
+from sphinx_polyversion.utils import async_all, import_file, shift_path
 
 
 @pytest.mark.parametrize(
@@ -56,3 +56,17 @@ def test_async_all():
         + [future(True) for i in range(5)]
     )
     assert not asyncio.run(async_all(some_false))
+
+
+def test_import_file(tmp_path: Path):
+    """Test the `import_file` function."""
+    # create a python module to import
+    module_path = tmp_path / "module.py"
+    module_path.write_text("a = 1")
+
+    # import the module
+    m = import_file(module_path)
+
+    assert m is not None
+    assert hasattr(m, "a")
+    assert m.a == 1
