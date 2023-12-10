@@ -96,7 +96,7 @@ jobs:
         run: make test
 
       # Upload summary of test results
-      - uses: test-summary/action@aa6f1b8c79e9ae89ff167de47f81566958bebc76 # v2.1
+      - uses: test-summary/action@v2.1
         if: failure() || success()
         with:
           paths: report.xml
