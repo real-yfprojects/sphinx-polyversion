@@ -1,4 +1,4 @@
-.PHONY: lint docs
+.PHONY: lint docs test
 
 lint:
 	poetry run ruff check .
@@ -6,3 +6,6 @@ lint:
 
 docs:
 	poetry run sphinx-polyversion docs/poly.py -l -vvv
+
+test:
+	poetry run pytest --cov=sphinx_polyversion/ --cov-report=term-missing --cov-report=lcov --numprocesses=auto
