@@ -10,6 +10,7 @@ readme = "README.md"
 authors = ["yfprojects <real-yfprojects@users.noreply.github.com>"]
 license = "MIT"
 repository = "https://github.com/real-yfprojects/sphinx-polyversion"
+documentation = "https://real-yfprojects.github.io/sphinx-polyversion/"
 keywords = ["utils", "documentation", "sphinx"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -46,7 +47,7 @@ black = "^23.3.0"
 pytest         = "^7.4.0"
 pytest-asyncio = "^0.21.1"
 pytest-cov     = "^4.1.0"
-pytest-xdist = "^3.5.0"
+pytest-xdist   = "^3.5.0"
 
 
 [tool.poetry.group.docs.dependencies]
