@@ -8,4 +8,4 @@ docs:
 	poetry run sphinx-polyversion docs/poly.py -l -vvv
 
 test:
-	poetry run pytest --cov=sphinx_polyversion/ --cov-report=term-missing --cov-report=lcov --numprocesses=auto
+	poetry run pytest  --junit-xml=report.xml --cov=sphinx_polyversion/ --cov-report=term-missing --cov-report=lcov --numprocesses=auto
