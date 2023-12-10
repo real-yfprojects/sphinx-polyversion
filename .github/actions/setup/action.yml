@@ -38,7 +38,7 @@ runs:
       if: inputs.cache-python == 'true'
       with:
         python-version: ${{ inputs.python-version }}
-        cache: "poetry"
+        cache: "pip"
 
     - name: setup python
       uses: actions/setup-python@v4
