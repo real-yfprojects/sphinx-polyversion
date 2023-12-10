@@ -40,7 +40,7 @@ jobs:
 
       # Upload changed files on pre-commit error
       - name: Upload changed files
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.changed-files.outputs.files }}
         uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: Files modified by pre-commit
@@ -104,7 +104,7 @@ jobs:
       # Upload coverage to job summary
       - name: Summarize coverage
         uses: livewing/lcov-job-summary@0a9952db27f98def2ba2de3189c6b24acc4c5501 # v1.1.0
-        if: matrix.extras == 'all'
+        if: matrix.extras == 'all' || failure() || success()
         with:
           lcov: coverage.lcov
 
