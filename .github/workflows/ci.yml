@@ -104,7 +104,7 @@ jobs:
       # Upload coverage to job summary
       - name: Summarize coverage
         uses: livewing/lcov-job-summary@0a9952db27f98def2ba2de3189c6b24acc4c5501 # v1.1.0
-        if: matrix.extras == 'all' || failure() || success()
+        if: matrix.extras == 'all' && (failure() || success())
         with:
           lcov: coverage.lcov
 
