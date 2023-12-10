@@ -1,5 +1,15 @@
 # sphinx-polyversion
 
+[![Static Badge](https://img.shields.io/badge/docs-latest-blue?logo=github&color=5cabff)](https://real-yfprojects.github.io/sphinx-polyversion/)
+[![pypi](https://img.shields.io/pypi/v/sphinx-polyversion.svg?logo=pypi&logoColor=white&color=0073b7)](https://pypi.org/project/sphinx-polyversion/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sphinx-polyversion?color=ffd43b)](https://pypi.org/project/sphinx-polyversion/)
+[![Github License](https://img.shields.io/github/license/real-yfprojects/sphinx-polyversion)](https://github.com/real-yfprojects/sphinx-polyversion/blob/main/LICENSE)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/sphinx-polyversion)](https://pypi.org/project/sphinx-polyversion/)
+[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v0.json)](https://github.com/charliermarsh/ruff)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://pre-commit.com)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 <!-- description -->
 
 Build multiple versions of your sphinx docs and merge them into one website.
