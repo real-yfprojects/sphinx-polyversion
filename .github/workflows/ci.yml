@@ -55,6 +55,7 @@ jobs:
           with open('pyproject.toml', 'rb') as f:
               manifest = tomllib.load(f)
           yaml = { 'include' : [{ 'extras' : extra} for extra in [''] + list(manifest['tool']['poetry']['extras'])]}
+          yaml['include'].append({'extras': ' '.join(manifest['tool']['poetry']['extras'])})
           out = json.dumps(yaml)
           print(out)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
