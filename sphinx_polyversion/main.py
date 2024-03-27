@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import argparse
+import argparse, sys
 from collections.abc import Iterable
 from logging import StreamHandler
 from pathlib import Path
@@ -83,8 +83,10 @@ def get_parser(expect_config: bool = True) -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main(args=None) -> None:
     """Run the `poly.py` config file."""
+    if args != None:
+        sys.argv = args
     parser = get_parser()
 
     args, _ = parser.parse_known_args()
