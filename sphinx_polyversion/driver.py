@@ -74,6 +74,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
     -------
     run()
         Build all revisions.
+
     """
 
     #: The version provider used by the driver e.g. to determine build targets.
@@ -103,6 +104,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
             The directory where to place the built docs.
         mock : MockData[RT] | None | Literal[False], optional
             Only build from local files and mock building all docs using the data provided.
+
         """
         self.root = root
         self.output_dir = output_dir
@@ -123,6 +125,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         -------
         str
             The name
+
         """
 
     @abstractmethod
@@ -136,6 +139,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         Returns
         -------
         VersionProvider
+
         """
 
     @abstractmethod
@@ -154,6 +158,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         Returns
         -------
         Builder
+
         """
 
     @abstractmethod
@@ -174,6 +179,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         Returns
         -------
         Environment
+
         """
 
     @abstractmethod
@@ -192,6 +198,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         -------
         JSONable
             The metadata to pass to the builder.
+
         """
 
     @abstractmethod
@@ -212,6 +219,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         -------
         AsyncContextManager[Path]
             A context manager creating and cleaning up the temp dir.
+
         """
 
     @abstractmethod
@@ -227,6 +235,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
             The revision that failed to build.
         exc_info : EXC_INFO
             The exception raised by the build steps.
+
         """
 
     def build_succeeded(self, rev: RT, data: Any) -> None:
@@ -242,6 +251,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
             The revision that was build.
         data : Any
             The data returned by the builder.
+
         """
         self.builds.append(rev)
 
@@ -257,6 +267,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         ----------
         rev : Any
             The revision to build.
+
         """
         builder = await self.init_builder(rev)
 
@@ -303,6 +314,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         ------
         ValueError
             `self.mock` isn't set.
+
         """
         if not self.mock:
             raise ValueError("Missing mock data.")
@@ -407,6 +419,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         The source directory for root level templates.
     mock : MockData[RT] | None | Literal[False], optional
         Only build from local files and mock building all docs using the data provided.
+
     """
 
     def __init__(
@@ -461,6 +474,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
             The source directory for root level templates.
         mock : MockData[RT] | None | Literal[False], optional
             Only build from local files and mock building all docs using the data provided.
+
         """
         super().__init__(Path(root), Path(output_dir), mock=mock)
         self.static_dir = Path(static_dir) if static_dir is not None else static_dir
@@ -494,6 +508,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         -------
         str
             The name
+
         """
         return self.namer(rev) if self.namer else self.vcs.name(rev)
 
@@ -516,6 +531,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         Returns
         -------
         Builder
+
         """
         if isinstance(self.builder, Mapping):
             r = self.selector(rev, self.builder.keys())  # type: ignore[misc]
@@ -541,6 +557,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         Returns
         -------
         Environment
+
         """
         if isinstance(self.env_factory, Mapping):
             r = self.selector(rev, self.env_factory.keys())  # type: ignore[misc]
@@ -573,6 +590,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         -------
         JSONable
             The metadata to pass to the builder.
+
         """
         if not self.data_factory:
             return {"revisions": tuple(self.targets), "current": rev}
@@ -603,6 +621,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         -------
         AsyncContextManager[Path]
             A context manager creating and cleaning up the temp dir.
+
         """
         with tempfile.TemporaryDirectory() as tmp:
             yield Path(tmp)
@@ -619,6 +638,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
             The revision that failed to build.
         exc_info : EXC_INFO
             The exception raised by the build steps.
+
         """
         logger.error("Building %s failed", self.name_for_rev(rev), exc_info=exc_info)
 

@@ -109,6 +109,7 @@ def get_current_commit(repo: Path) -> str:
     -------
     str
         The hex obj hash of the commit.
+
     """
     cmd = (
         "git",
@@ -116,7 +117,7 @@ def get_current_commit(repo: Path) -> str:
         "HEAD",
     )
 
-    process = subprocess.run(cmd, stdout=PIPE, cwd=repo)
+    process = subprocess.run(cmd, stdout=PIPE, cwd=repo, check=True)
     return process.stdout.decode().rstrip("\n")
 
 
@@ -269,6 +270,7 @@ async def closest_tag(root: Path, ref: GitRef, tags: tuple[str]) -> str | None:
     -------
     str | None
         The closest ancestor or None if no ancestor was found.
+
     """
     for tag in reversed(tags):
         if await _is_ancestor(root, tag, ref.obj):
@@ -331,6 +333,7 @@ def refs_by_type(refs: Iterator[GitRef]) -> Tuple[list[GitRef], list[GitRef]]:
     -------
     branches : list[GitRef]
     tags : list[GitRef]
+
     """
     return (
         list(filter(lambda r: r.type_ == GitRefType.BRANCH, refs)),
@@ -356,6 +359,7 @@ def file_predicate(
     -------
     Callable[[Path, GitRef], Coroutine[None, None, bool]]
         The predicate.
+
     """
     files = [PurePath(file) for file in files]
 
@@ -377,6 +381,7 @@ class Git(VersionProvider[GitRef]):
         Regex tags must match completely
     remote : str | None, optional
         Limit to this remote or to local refs if not specified, by default None
+
     """
 
     def __init__(
@@ -420,6 +425,7 @@ class Git(VersionProvider[GitRef]):
         -------
         str
             The name of the revision.
+
         """
         return revision.name
 
@@ -437,6 +443,7 @@ class Git(VersionProvider[GitRef]):
         -------
         Path
             The root path of the repo.
+
         """
         return await _get_git_root(Path(path))
 
@@ -454,6 +461,7 @@ class Git(VersionProvider[GitRef]):
         -------
         Path
             The root path of the repo.
+
         """
         return asyncio.run(cls.aroot(path))
 
@@ -469,6 +477,7 @@ class Git(VersionProvider[GitRef]):
             The destination to copy the revision to.
         revision : Any
             The revision to extract.
+
         """
         await _copy_tree(root, revision.obj, dest, self.buffer_size)
 
@@ -490,6 +499,7 @@ class Git(VersionProvider[GitRef]):
         -------
         bool
             Whether to build the revision referenced.
+
         """
         match = True
         if ref.type_ == GitRefType.TAG:
@@ -524,6 +534,7 @@ class Git(VersionProvider[GitRef]):
         -------
         tuple[GitRef]
             The revisions/git references to build.
+
         """
 
         async def handle(ref: GitRef) -> GitRef | None:

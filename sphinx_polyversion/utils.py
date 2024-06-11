@@ -49,6 +49,7 @@ else:
         Returns
         -------
         The return value of the called function.
+
         """
         loop = asyncio.get_running_loop()
         func_call = partial(func, *args, **kwargs)
@@ -100,6 +101,7 @@ def import_file(path: Path) -> Any:
         The module spec couldn't be created.
     ImportError
         No loader was found for the module.
+
     """
     module_name = path.stem
     spec = importlib.util.spec_from_file_location(module_name, path)
@@ -130,6 +132,7 @@ async def async_all(awaitables: Iterable[Awaitable[Any]]) -> bool:
     -------
     bool
         Whether all awaitables returned True.
+
     """
     tasks = cast(
         Set["asyncio.Task[Any]"],

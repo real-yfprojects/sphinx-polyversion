@@ -47,6 +47,7 @@ def no_git_env(_env: Mapping[str, str] | None = None) -> dict[str, str]:
     -------
     dict[str, str]
         The same dictionary but without the problematic vars
+
     """
     # Too many bugs dealing with environment variables and GIT:
     # https://github.com/pre-commit/pre-commit/issues/300
@@ -84,7 +85,7 @@ def git_testrepo(tmp_path: Path) -> Tuple[Path, List[GitRef]]:
     env = no_git_env()
 
     def run_git(*args: str) -> None:
-        subprocess.run(git + args, cwd=tmp_path, env=env)
+        subprocess.run(git + args, cwd=tmp_path, env=env, check=False)
 
     # init repo
     run_git("init")
@@ -136,6 +137,7 @@ def git_testrepo(tmp_path: Path) -> Tuple[Path, List[GitRef]]:
         ["git", "for-each-ref", "--format=%(objectname) %(refname)"],
         cwd=tmp_path,
         stdout=subprocess.PIPE,
+        check=False,
     )
 
     types = [

@@ -166,6 +166,7 @@ def linkcode_resolve(domain, info):
     .. seealso::
 
         https://www.sphinx-doc.org/en/master/usage/extensions/linkcode.html#confval-linkcode_resolve
+
     """
     if domain != "py":
         return None

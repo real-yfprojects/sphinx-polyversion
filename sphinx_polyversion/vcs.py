@@ -29,6 +29,7 @@ class VersionProvider(Protocol[RT]):
         -------
         str
             The name of the revision.
+
         """
 
     @abstractmethod
@@ -44,6 +45,7 @@ class VersionProvider(Protocol[RT]):
             The destination to extract the revision to.
         revision : Any
             The revision to extract.
+
         """
 
     @abstractmethod
@@ -62,4 +64,5 @@ class VersionProvider(Protocol[RT]):
         -------
         Iterable[RT]
             The build targets.
+
         """

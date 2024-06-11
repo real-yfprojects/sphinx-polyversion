@@ -41,6 +41,7 @@ class Environment:
     -------
     run(*cmd: str, decode: bool = True, **kwargs: Any)
         Run a OS process in the environment.
+
     """
 
     path: Path
@@ -55,6 +56,7 @@ class Environment:
             The location of the current revision.
         name : str
             The name of the environment (usually the name of the current revision).
+
         """
         self.path = path.resolve()
         self.logger = ContextAdapter(getLogger(__name__), {"context": name})
@@ -84,6 +86,7 @@ class Environment:
             The error output of the command
         returncode : int | None
             The returncode of the command
+
         """
         process = await asyncio.create_subprocess_exec(*cmd, **kwargs)
         out, err = await process.communicate()
@@ -111,6 +114,7 @@ class Environment:
         -------
         Callable[[Path, str], ENV]
             The factory function.
+
         """
         return partial(cls, **kwargs)
 

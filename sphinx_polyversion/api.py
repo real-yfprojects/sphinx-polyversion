@@ -39,6 +39,7 @@ def load(namespace: dict[str, Any] | None = None) -> Any:
     ------
     LoadError
         The environment variable isn't set.
+
     """
     namespace = namespace or {}
 
@@ -72,6 +73,7 @@ def apply_overrides(namespace: dict[str, Any]) -> dict[str, Any]:
     -------
     dict[str, Any]
         The values that were applied to the namespace.
+
     """
     args = get_parser(expect_config=False).parse_args()
     overrides: dict[str, Any] = args.override

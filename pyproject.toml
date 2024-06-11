@@ -37,10 +37,9 @@ jinja      = ["jinja2"]
 sphinx-polyversion = "sphinx_polyversion.main:main"
 
 [tool.poetry.group.lint.dependencies]
-mypy  = "^1.3.0"
-ruff  = "^0.0.272"
-black = "^23.3.0"
-
+mypy  = "^1.7.1"
+ruff  = "^0.1.6"
+black = "^23.11.0"
 
 [tool.poetry.group.test.dependencies]
 pytest         = "^7.4.4"

@@ -49,6 +49,7 @@ class CommandBuilder(Builder[Environment, None]):
         Additional command to run before `cmd`.
     post_cmd : Iterable[str | Placeholder], optional
         Additional command to run after `cmd`.
+
     """
 
     def __init__(
@@ -74,6 +75,7 @@ class CommandBuilder(Builder[Environment, None]):
             Additional command to run before `cmd`.
         post_cmd : Iterable[str | Placeholder], optional
             Additional command to run after `cmd`.
+
         """
         super().__init__()
         self.cmd = cmd
@@ -101,6 +103,7 @@ class CommandBuilder(Builder[Environment, None]):
             The output directory to build to.
         data : JSONable
             The metadata to use for building.
+
         """
         self.logger.info("Building...")
         source_dir = str(environment.path.absolute() / self.source)
@@ -156,6 +159,7 @@ class SphinxBuilder(CommandBuilder):
         Additional command to run before `cmd`.
     post_cmd : Iterable[str | Placeholder], optional
         Additional command to run after `cmd`.
+
     """
 
     def __init__(
@@ -182,6 +186,7 @@ class SphinxBuilder(CommandBuilder):
             Additional command to run before `cmd`.
         post_cmd : Iterable[str | Placeholder], optional
             Additional command to run after `cmd`.
+
         """
         cmd: Iterable[str | Placeholder] = [
             "sphinx-build",

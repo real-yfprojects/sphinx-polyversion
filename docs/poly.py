@@ -35,7 +35,7 @@ MOCK_DATA = {
         GitRef("dev", "", "", GitRefType.BRANCH, datetime.fromtimestamp(4)),
         GitRef("some-feature", "", "", GitRefType.BRANCH, datetime.fromtimestamp(5)),
     ],
-    "current": GitRef("local", "", "", GitRefType.BRANCH, datetime.fromtimestamp(6)),
+    "current": GitRef("local", "", "", GitRefType.TAG, datetime.fromtimestamp(6)),
 }
 MOCK = False
 

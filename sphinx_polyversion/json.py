@@ -79,6 +79,7 @@ class Transformable(Protocol):
         Returns
         -------
         An instance of this class.
+
         """
 
 
@@ -106,6 +107,7 @@ class Encoder(json.JSONEncoder):
         The object hooks to use, by default []
     **kwargs
         Keyword arguments passed to :class:`json.JSONEncoder`
+
     """
 
     @overload
@@ -128,6 +130,7 @@ class Encoder(json.JSONEncoder):
             The object hooks to use, by default []
         **kwargs
             Keyword arguments passed to :class:`json.JSONEncoder`
+
         """
         super().__init__(**kwargs)
         self.hooks = {hooks} if isinstance(hooks, JSONHook) else set(hooks)
@@ -162,6 +165,7 @@ class Encoder(json.JSONEncoder):
             Hook or class already registered
         TypeError
             Invalid type that doesn't implement :class:`JSONHook` or :class:`Transformable`.
+
         """
         for t in ts:
             self.hooks.add(t)
@@ -186,6 +190,7 @@ class Encoder(json.JSONEncoder):
         -------
         str
             The identifier
+
         """
         module = getmodule(o)
         mod_name = module.__name__ if module else ""
@@ -206,6 +211,7 @@ class Encoder(json.JSONEncoder):
         -------
         JSON_TYPE_DUMP
             The resulting json object.
+
         """
         for hook in self.hooks:
             if (fields := hook.fields(o)) is not None:
@@ -257,6 +263,7 @@ class Encoder(json.JSONEncoder):
         Notes
         -----
         Calls :method:`transform` internally.
+
         """
         return self.transform(o)
 
@@ -306,6 +313,7 @@ class Decoder(json.JSONDecoder):
         Register a hook or a tranformable type.
     register_from(decoder)
         Register all types registered by another decoder.
+
     """
 
     def __init__(
@@ -332,6 +340,7 @@ class Decoder(json.JSONDecoder):
             Constant parser, by default None
         strict : bool, optional
             Whether to disallow control characters, by default True
+
         """
         if decoder:
             parse_float = parse_float or decoder.parse_float
@@ -378,6 +387,7 @@ class Decoder(json.JSONDecoder):
         -------
         str
             The identifier.
+
         """
         mod_name = getmodule(t).__name__  # type: ignore
         cls_name = t.__qualname__
@@ -424,6 +434,7 @@ class Decoder(json.JSONDecoder):
             Hook or class already registered
         TypeError
             Invalid type that doesn't implement :class:`JSONHook` or :class:`Transformable`.
+
         """
         for t in ts:
             key = self.determine_classname(t)
@@ -485,6 +496,7 @@ class JSONHook(Protocol):
         -------
         None | JSONable
             The fields of the objects if it is supported else None
+
         """
 
     @staticmethod
@@ -506,6 +518,7 @@ class JSONHook(Protocol):
         -------
         Any
             The deserialized object.
+
         """
 
 
