@@ -46,16 +46,25 @@
 - [x] Verbosity flag
 - [x] Pre and post build commands
 - [x] Easily build local version and mocking
+- [x] PyPi package
 
-# 1.0.0-alpha1
+# 1.0.0
 
-- [ ] High Test coverage
+- [x] 70% Test coverage
   - [x] Unittests
   - [x] Integration tests
 - [ ] Enhance README
   - [ ] Comparison to alternatives
+- [ ] CI
+  - [ ] Coverage badge
+  - [ ] Test badge
+  - [ ] publish to pypi on release
+  - [x] Tests
+  - [x] Doc preview
+  - [x] Linting
+- [x] Docs on Github Pages
 
-# 1.0.0
+# 1.0.1
 
 - [ ] Extensive Documentation
   - [ ] User guide
@@ -71,17 +80,9 @@
   - [ ] Workflows, Policies
   - [ ] Maintaining
 - [ ] CI
-  - [ ] Coverage badge
-  - [ ] Test badge
   - [ ] Change in coverage
   - [ ] Highlight linting problems in PR
   - [ ] Higlight uncovered code in PR
-  - [x] Tests
-  - [x] Doc preview
-  - [x] Linting
-- [x] Docs on Github Pages
-
-- [x] PyPi package
 
 # 1.1.0
 
@@ -93,5 +94,4 @@
 
 # Wishlist
 
-- Limit number of subprocesses to CPU count to optimize speed
 - typed overrides
