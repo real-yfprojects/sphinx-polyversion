@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "sphinx_polyversion"
-version = "0.5.0"
+version = "1.0.0"
 description = "Build multiple versions of your sphinx docs and merge them into one website."
 readme = "README.md"
 authors = ["yfprojects <real-yfprojects@users.noreply.github.com>"]
