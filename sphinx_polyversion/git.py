@@ -535,4 +535,4 @@ class Git(VersionProvider[GitRef]):
         async for ref in _get_all_refs(root):
             tasks.append(handle(ref))
 
-        return tuple(filter(bool, await asyncio.gather(*tasks)))
+        return tuple(filter(None, await asyncio.gather(*tasks)))
