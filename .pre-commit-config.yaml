@@ -62,13 +62,13 @@ repos:
 
   # Format python code with black
   - repo: https://github.com/psf/black
-    rev: 193ee766ca496871f93621d6b58d57a6564ff81b # frozen: 23.7.0
+    rev: ec91a2be3c44d88e1a3960a4937ad6ed3b63464e # frozen: 23.12.1
     hooks:
       - id: black
 
   # Static type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 92192ce4375942ece2c41ddfa482e3d723fe6084 # frozen: v1.5.0
+    rev: e5ea6670624c24f8321f6328ef3176dbba76db46 # frozen: v1.10.0
     hooks:
       - id: mypy
         exclude: ^(tests|docs)
