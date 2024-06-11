@@ -34,8 +34,6 @@ Have a look at the [roadmap](./ROADMAP.md) to find out about upcoming features.
 
 ## Installation
 
-This project is not yet released and therefore cannot be installed from pypi yet.
-
 ```
 pip install sphinx-polyversion
 ```
