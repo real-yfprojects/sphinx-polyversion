@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: c4a0b883114b00d8d76b479c820ce7950211c99b # frozen: v4.5.0
+    rev: 2c9f875913ee60ca25ce70243dc24d5b6415598c # frozen: v4.6.0
     hooks:
       # check file system problems
       - id: check-case-conflict
@@ -24,7 +24,7 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/python-poetry/poetry
-    rev: "ceeb1892a1f7456a65cd847ad36d740a577dee5e" # frozen: 1.7.0
+    rev: "c85477da8a610a87133299f996f8d8a593aa7bff" # frozen: 1.8.0
     hooks:
       - id: poetry-check
       - id: poetry-lock
@@ -75,14 +75,14 @@ repos:
         args: [--ignore-missing-imports]
 
   # format many other files with prettier
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "fc6ac4eb41985d70a660d6f8e69048479688d26c" # frozen: v4.0.0-alpha.4
+  - repo: "https://github.com/pycontribs/mirrors-prettier"
+    rev: b28ab1718b516827e9f6cdfbd3c4c9546489d53e # frozen: v3.3.2
     hooks:
       - id: prettier
-        exclude: ^docs/source/(_polyversion/|_)templates/
+        exclude: ^docs/(sphinx/_)templates/
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: 57fe0d1748f3ace002f5599289f5a53330555b20 # frozen: v0.15
+    rev: bea368871c59605bf2471441d0c6214bd3b80c44 # frozen: v0.18
     hooks:
       - id: validate-pyproject
         files: pyproject.toml$
