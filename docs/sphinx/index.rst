@@ -18,6 +18,7 @@ Table of Contents
 
     guide/installation
     guide/getting-started
+    alternatives
 
 .. toctree::
     :maxdepth: 2
