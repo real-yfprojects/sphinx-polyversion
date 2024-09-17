@@ -9,6 +9,11 @@ This guide assumes that you installed `sphinx-polyversion` into the development
 environment of your project and have written some documentation that builds
 with `sphinx-build`.
 
+For this tool it doesn't matter which branch you are working on as it will
+query the whole git repository for branches and tags to build documentation for.
+However you will need to fetch all the references that should be visible to the tool.
+However the tool will always use the configuration currently checked out.
+
 .. TODO: link sphinx docs / sphinx build
 
 Configuring `sphinx-polyversion`
