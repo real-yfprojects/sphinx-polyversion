@@ -69,6 +69,7 @@
 - [ ] Extensive Documentation
   - [ ] User guide
     - [ ] Use different setups depending on the version
+    - [ ] Updating docs from old versions using cherry-pick
   - [ ] Subclassing guide
   - [ ] Reference
     - [ ] Command line syntax
