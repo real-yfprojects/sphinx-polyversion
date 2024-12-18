@@ -355,18 +355,32 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         self.vcs = await self.init_vcs()
         self.targets = await self.vcs.retrieve(self.root)
 
-    async def arun(self) -> None:
+    async def arun(self, sequential: bool = False) -> None:
         """Build all revisions (async)."""
         await self.init()
-        await asyncio.gather(*(self.build_revision(rev) for rev in self.targets))
+        if sequential:
+            for rev in self.targets:
+                await asyncio.gather(self.build_revision(rev))
+        else:
+            await asyncio.gather(*(self.build_revision(rev) for rev in self.targets))
         await self.build_root()
 
-    def run(self, mock: bool = False) -> None:
-        """Build all revisions or build from local files."""
+    def run(self, mock: bool = False, sequential: bool = False) -> None:
+        """
+        Build all revisions or build from local files.
+
+        Parameters
+        ----------
+        mock : bool, optional, default: False
+            Whether to build all revisions (False) or from local files (True)
+        sequential : bool, optional, default: False
+            Whether to build revisions in parallel (False) or sequential (True)
+
+        """
         if mock:
             asyncio.run(self.build_local())
         else:
-            asyncio.run(self.arun())
+            asyncio.run(self.arun(sequential=sequential))
 
 
 class MockData(TypedDict):
