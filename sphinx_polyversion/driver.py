@@ -355,14 +355,17 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         self.vcs = await self.init_vcs()
         self.targets = await self.vcs.retrieve(self.root)
 
-    async def arun(self, sequential: bool = False) -> None:
+    async def arun(self) -> None:
         """Build all revisions (async)."""
         await self.init()
-        if sequential:
-            for rev in self.targets:
-                await asyncio.gather(self.build_revision(rev))
-        else:
-            await asyncio.gather(*(self.build_revision(rev) for rev in self.targets))
+        await asyncio.gather(*(self.build_revision(rev) for rev in self.targets))
+        await self.build_root()
+
+    async def srun(self) -> None:
+        """Build all revisions (sequential)."""
+        await self.init()
+        for rev in self.targets:
+            await self.build_revision(rev)
         await self.build_root()
 
     def run(self, mock: bool = False, sequential: bool = False) -> None:
@@ -379,8 +382,10 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         """
         if mock:
             asyncio.run(self.build_local())
+        elif sequential:
+            asyncio.run(self.srun())
         else:
-            asyncio.run(self.arun(sequential=sequential))
+            asyncio.run(self.arun())
 
 
 class MockData(TypedDict):
