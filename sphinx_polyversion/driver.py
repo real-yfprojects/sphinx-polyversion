@@ -678,4 +678,5 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
                 template = env.get_template(template_path_str)
                 rendered = template.render(context)
                 output_path = self.output_dir / template_path_str
+                output_path.parent.mkdir(parents=True, exist_ok=True)
                 output_path.write_text(rendered)
