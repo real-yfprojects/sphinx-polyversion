@@ -108,7 +108,11 @@ MOCK_DATA = {
     ],
     "current": GitRef("local", "", "", GitRefType.BRANCH, datetime.fromtimestamp(6)),
 }
+#: Whether to build using only local files and mock data
 MOCK = False
+
+#: Whether to run the builds in sequence or in parallel
+SEQUENTIAL = False
 
 # Load overrides read from commandline to global scope
 apply_overrides(globals())
@@ -131,7 +135,7 @@ DefaultDriver(
     template_dir=root / src / "templates",
     static_dir=root / src / "static",
     mock=MOCK_DATA,
-).run(MOCK)
+).run(MOCK, SEQUENTIAL)
 ```
 
 Build your docs by running
@@ -143,7 +147,7 @@ $ sphinx-polyversion docs/poly.py
 ### Commandline Options
 
 ```
-usage: sphinx-polyversion [-h] [-o [OVERRIDE [OVERRIDE ...]]] [-v] [-l] conf [out]
+usage: sphinx-polyversion [-h] [-o [OVERRIDE [OVERRIDE...]]] [-v] [-l] [--sequential] conf [out]
 
 Build multiple versions of your sphinx docs and merge them into one site.
 
@@ -157,6 +161,7 @@ optional arguments:
                         Override config options. Pass them as `key=value` pairs.
   -v, --verbosity       Increase output verbosity (decreases minimum log level). The default log level is ERROR.
   -l, --local, --mock   Build the local version of your docs.
+  --sequential          Build the revisions sequentially.
 ```
 
 ### How To Build Versions Differently

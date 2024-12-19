@@ -83,7 +83,7 @@ def get_parser(expect_config: bool = True) -> argparse.ArgumentParser:
     parser.add_argument(
         "--sequential",
         action="store_true",
-        help="Build the revisions in sequentially.",
+        help="Build the revisions sequentially.",
     )
     return parser
 
