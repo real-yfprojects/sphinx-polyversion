@@ -31,4 +31,4 @@ def test_apply_overrides():
     namespace = {}
     apply_overrides(namespace)
 
-    assert namespace == {"a": "1", "b": "2", "MOCK": False}
+    assert namespace == {"a": "1", "b": "2", "MOCK": False, "SEQUENTIAL": False}

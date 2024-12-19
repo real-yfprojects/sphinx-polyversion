@@ -80,6 +80,11 @@ def get_parser(expect_config: bool = True) -> argparse.ArgumentParser:
         action="store_true",
         help="Build the local version of your docs.",
     )
+    parser.add_argument(
+        "--sequential",
+        action="store_true",
+        help="Build the revisions sequentially.",
+    )
     return parser
 
 
