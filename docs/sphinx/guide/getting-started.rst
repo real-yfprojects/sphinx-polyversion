@@ -45,9 +45,13 @@ you define and how you name them.
 
 .. warning::
 
-    There are to naming specifications for config variables:
+    To be able to override configuration options using the `sphix-polyversion`
+    command, you have to use the following naming specifications for config
+    variables:
     The output directory must always be called :code:`OUTPUT_DIR`.
-    And you have to pass :code:`MOCK` to :code:`DefaultDriver.run`.
+    The flag to use the local version and mock data must be called :code:`MOCK`.
+    The flag to use sequential builds must be called :code:`SEQUENTIAL`.
+    Finally, you have to pass :code:`MOCK` and :code:`SEQUENTIAL` to :code:`DefaultDriver.run`.
 
 .. TODO link reference
 
@@ -68,10 +72,8 @@ you define and how you name them.
 Defining the options as variables at the beginning not only makes
 the configuration file easier to understand but also allows those variables to
 be overridden from the commandline before being used to build the documentation.
-This is a major feature of `sphinx-polyversion` which will be explained
-further down this guide.
-
-.. TODO: link overrides section
+This is a major feature of `sphinx-polyversion` which will be explained in this
+section and :ref:`further down this guide<Overriding config options>`.
 
 .. code-block:: py
     :caption: `docs/poly.py` - imports and config variables
@@ -116,6 +118,11 @@ further down this guide.
         "current": GitRef("local", "", "", GitRefType.BRANCH, datetime.fromtimestamp(6)),
     }
 
+    #: Whether to build using only local files and mock data
+    MOCK = False
+
+    #: Whether to run the builds in sequence or in parallel
+    SEQUENTIAL = False
 
 Next you add the code handling the overrides read from the commandline.
 This is straightforward since `sphinx-polyversion` provides the function :code:`apply_overrides` that
@@ -177,7 +184,7 @@ in its revision.
         template_dir=root / src / "templates",
         static_dir=root / src / "static",
         mock=MOCK_DATA,
-    ).run(MOCK)
+    ).run(MOCK, SEQUENTIAL)
 
 Using versioning data in :code:`conf.py`
 ----------------------------------------
@@ -314,6 +321,7 @@ this flag all other versions are not build.
     :prog: sphinx_polyversion
     :nodescription:
 
+.. _Overriding config options:
 
 Overriding config options
 -------------------------
@@ -321,6 +329,7 @@ Overriding config options
 You can override the defaults set in `poly.py` by specifying values on the
 commandline. Specifying an output location will override :code:`OUTPUT_DIR` while
 specifying :code:`--local` will set :code:`MOCK` to :code:`True`.
+Specifying :code:`--sequential` will set :code:`SEQUENTIAL` to :code:`True`.
 All other variables can be overidden through the :code:`-o` flag. You can
 override the arguments passed to `sphinx-build` by entering the following:
 

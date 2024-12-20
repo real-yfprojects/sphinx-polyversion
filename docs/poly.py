@@ -37,7 +37,12 @@ MOCK_DATA = {
     ],
     "current": GitRef("local", "", "", GitRefType.TAG, datetime.fromtimestamp(6)),
 }
+
+#: Whether to build using only local files and mock data
 MOCK = False
+
+#: Whether to run the builds in sequence or in parallel
+SEQUENTIAL = False
 
 
 #: Data passed to templates
@@ -84,4 +89,4 @@ DefaultDriver(
     data_factory=data,
     root_data_factory=root_data,
     mock=MOCK_DATA,
-).run(MOCK)
+).run(MOCK, SEQUENTIAL)

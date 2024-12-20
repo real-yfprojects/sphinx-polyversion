@@ -82,6 +82,9 @@ def apply_overrides(namespace: dict[str, Any]) -> dict[str, Any]:
     overrides.setdefault("MOCK", False)
     if args.local:
         overrides["MOCK"] = True
+    overrides.setdefault("SEQUENTIAL", False)
+    if args.sequential:
+        overrides["SEQUENTIAL"] = True
     namespace.update(overrides)
     return overrides
 

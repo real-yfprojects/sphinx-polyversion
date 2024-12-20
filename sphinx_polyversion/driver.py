@@ -361,10 +361,29 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         await asyncio.gather(*(self.build_revision(rev) for rev in self.targets))
         await self.build_root()
 
-    def run(self, mock: bool = False) -> None:
-        """Build all revisions or build from local files."""
+    async def srun(self) -> None:
+        """Build all revisions (sequential)."""
+        await self.init()
+        for rev in self.targets:
+            await self.build_revision(rev)
+        await self.build_root()
+
+    def run(self, mock: bool = False, sequential: bool = False) -> None:
+        """
+        Build all revisions or build from local files.
+
+        Parameters
+        ----------
+        mock : bool, optional, default: False
+            Whether to build all revisions (False) or from local files (True)
+        sequential : bool, optional, default: False
+            Whether to build revisions in parallel (False) or sequential (True)
+
+        """
         if mock:
             asyncio.run(self.build_local())
+        elif sequential:
+            asyncio.run(self.srun())
         else:
             asyncio.run(self.arun())
 
