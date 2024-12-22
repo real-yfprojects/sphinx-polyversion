@@ -412,6 +412,10 @@ class Pip(VirtualPythonEnvironment):
         The cmd arguments to pass to `pip install`.
     creator : Callable[[Path], Any] | None, optional
         A callable for creating the venv, by default None
+    temporary   : bool, optional
+        A flag to specify whether the environment should be created in the
+        temporary directory, by default False. If this is True, `creator`
+        must not be None.
     env  : dict[str, str], optional
         A dictionary of environment variables which are overridden in the
         virtual environment, by default None
@@ -426,6 +430,7 @@ class Pip(VirtualPythonEnvironment):
         *,
         args: Iterable[str],
         creator: Callable[[Path], Any] | None = None,
+        temporary: bool = False,
         env: dict[str, str] | None = None,
     ):
         """
@@ -443,13 +448,31 @@ class Pip(VirtualPythonEnvironment):
             The cmd arguments to pass to `pip install`.
         creator : Callable[[Path], Any], optional
             A callable for creating the venv, by default None
+        temporary   : bool, optional
+            A flag to specify whether the environment should be created in the
+            temporary directory, by default False. If this is True, `creator`
+            must not be None.
         env  : dict[str, str], optional
             A dictionary of environment variables which are overridden in the
             virtual environment, by default None
 
+        Raises
+        ------
+        ValueError
+            If `temporary` is enabled, but no valid creator is provided.
+
         """
-        super().__init__(path, name, venv, creator=creator, env=env)
         self.args = args
+        if temporary:
+            if creator is None:
+                raise ValueError(
+                    "Cannot create temporary virtual environment when creator is None."
+                    "Please set creator to enable temporary virtual environments, or "
+                    "set temporary to False to use a pre-existing local environment "
+                    f"at path {venv}."
+                )
+            venv = path / venv
+        super().__init__(path, name, venv, creator=creator, env=env)
 
     async def __aenter__(self) -> Self:
         """
