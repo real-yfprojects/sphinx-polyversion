@@ -185,7 +185,7 @@ BUILDER = {
 ENVIRONMENT = {
     None: Poetry.factory(args="--sync".split()),  # first version
     "v1.5.7": Poetry.factory(args="--only sphinx --sync".split()),
-    "v1.8.2": Poetry.factory(args="--only dev --sync".split()),
+    "v1.8.2": Poetry.factory(args="--only dev --sync".split(), env={"MY_VAR": "value"}),
     "v3.0.0": Pip.factory(venv=Path(".venv"), args="-e . -r requirements.txt".split()),
 }
 
