@@ -459,17 +459,17 @@ class Pip(VirtualPythonEnvironment):
         Raises
         ------
         ValueError
-            If `temporary` is enabled, but no valid creator is provided.
+            If `temporary` is enabled but no valid creator is provided.
 
         """
         self.args = args
         if temporary:
             if creator is None:
                 raise ValueError(
-                    "Cannot create temporary virtual environment when creator is None."
+                    "Cannot create temporary virtual environment when creator is None.\n"
                     "Please set creator to enable temporary virtual environments, or "
                     "set temporary to False to use a pre-existing local environment "
-                    f"at path {venv}."
+                    f"at path '{venv}'."
                 )
             venv = path / venv
         super().__init__(path, name, venv, creator=creator, env=env)
