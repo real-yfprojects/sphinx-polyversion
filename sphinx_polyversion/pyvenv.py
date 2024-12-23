@@ -333,6 +333,10 @@ class Pip(VirtualPythonEnvironment):
         The cmd arguments to pass to `pip install`.
     creator : Callable[[Path], Any] | None, optional
         A callable for creating the venv, by default None
+    temporary   : bool, optional
+        A flag to specify whether the environment should be created in the
+        temporary directory, by default False. If this is True, `creator`
+        must not be None.
 
     """
 
@@ -344,6 +348,7 @@ class Pip(VirtualPythonEnvironment):
         *,
         args: Iterable[str],
         creator: Callable[[Path], Any] | None = None,
+        temporary: bool = False,
     ):
         """
         Build Environment for using a venv and pip.
@@ -360,10 +365,28 @@ class Pip(VirtualPythonEnvironment):
             The cmd arguments to pass to `pip install`.
         creator : Callable[[Path], Any], optional
             A callable for creating the venv, by default None
+        temporary   : bool, optional
+            A flag to specify whether the environment should be created in the
+            temporary directory, by default False. If this is True, `creator`
+            must not be None.
+
+        Raises
+        ------
+        ValueError
+            If `temporary` is enabled but no valid creator is provided.
 
         """
-        super().__init__(path, name, venv, creator=creator)
         self.args = args
+        if temporary:
+            if creator is None:
+                raise ValueError(
+                    "Cannot create temporary virtual environment when creator is None.\n"
+                    "Please set creator to enable temporary virtual environments, or "
+                    "set temporary to False to use a pre-existing local environment "
+                    f"at path '{venv}'."
+                )
+            venv = path / venv
+        super().__init__(path, name, venv, creator=creator)
 
     async def __aenter__(self) -> Self:
         """

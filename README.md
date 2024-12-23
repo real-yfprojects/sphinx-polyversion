@@ -186,7 +186,10 @@ ENVIRONMENT = {
     None: Poetry.factory(args="--sync".split()),  # first version
     "v1.5.7": Poetry.factory(args="--only sphinx --sync".split()),
     "v1.8.2": Poetry.factory(args="--only dev --sync".split()),
+    # use a pre-existing environment at the location ./.venv
     "v3.0.0": Pip.factory(venv=Path(".venv"), args="-e . -r requirements.txt".split()),
+    # dynamically create an environment in the temporary build directory
+    "v4.*.*": Pip.factory(venv=Path(".venv"), args="-e . -r requirements.txt".split(), creator=VenvWrapper(), temporary=True),
 }
 
 # ...
