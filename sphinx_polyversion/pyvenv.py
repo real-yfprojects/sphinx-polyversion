@@ -99,6 +99,9 @@ class VirtualPythonEnvironment(Environment):
         The path of the python venv.
     creator : Callable[[Path], Any], optional
         A callable for creating the venv, by default None
+    env  : dict[str, str], optional
+        A dctionary of environment variables which are forwarded to the
+        virtual environment, by default None
 
     Attributes
     ----------
@@ -108,6 +111,8 @@ class VirtualPythonEnvironment(Environment):
         The name of the environment.
     venv : Path
         The path of the python venv.
+    env  : dict
+        The user-specified environment variables for the virtual environment.
 
     """
 
@@ -118,6 +123,7 @@ class VirtualPythonEnvironment(Environment):
         venv: str | Path,
         *,
         creator: Callable[[Path], Any] | None = None,
+        env: dict[str, str] | None = None,
     ):
         """
         Environment for building inside a python virtual environment.
@@ -132,11 +138,15 @@ class VirtualPythonEnvironment(Environment):
             The path of the python venv.
         creator : Callable[[Path], Any], optional
             A callable for creating the venv, by default None
+        env  : dict[str, str], optional
+            A dictionary of environment variables which are forwarded to the
+            virtual environment, by default None
 
         """
         super().__init__(path, name)
         self.venv = Path(venv).resolve()
         self._creator = creator
+        self.env = env or {}
 
     async def create_venv(self) -> None:
         """
@@ -176,6 +186,20 @@ class VirtualPythonEnvironment(Environment):
             The dictionary that was passed with `env`.
 
         """
+        # add user-supplied values to env
+        for key, value in self.env.items():
+            if key == "PATH":
+                # extend PATH instead of replacing
+                env["PATH"] = value + ":" + env["PATH"]
+                continue
+            if key in env:
+                logger.info(
+                    "Overwriting environment variable %s=%s with user-specified value '%s'.",
+                    key,
+                    env[key],
+                    value,
+                )
+            env[key] = value
         env["VIRTUAL_ENV"] = str(self.venv)
         env["PATH"] = str(self.venv / "bin") + ":" + env["PATH"]
         return env
@@ -221,10 +245,20 @@ class Poetry(VirtualPythonEnvironment):
         The name of the environment (usually the name of the revision).
     args : Iterable[str]
         The cmd arguments to pass to `poetry install`.
+    env  : dict[str, str], optional
+        A dictionary of environment variables which are forwarded to the
+        virtual environment, by default None
 
     """
 
-    def __init__(self, path: Path, name: str, *, args: Iterable[str]):
+    def __init__(
+        self,
+        path: Path,
+        name: str,
+        *,
+        args: Iterable[str],
+        env: dict[str, str] | None = None,
+    ):
         """
         Build Environment for isolated builds using poetry.
 
@@ -236,12 +270,16 @@ class Poetry(VirtualPythonEnvironment):
             The name of the environment (usually the name of the revision).
         args : Iterable[str]
             The cmd arguments to pass to `poetry install`.
+        env  : dict[str, str], optional
+            A dictionary of environment variables which are forwarded to the
+            virtual environment, by default None
 
         """
         super().__init__(
             path,
             name,
             path / ".venv",  # placeholder, determined later
+            env=env,
         )
         self.args = args
 
@@ -270,6 +308,20 @@ class Poetry(VirtualPythonEnvironment):
             venv_path = self.path / f".venv-{i}"
             i += 1
         env["POETRY_VIRTUALENVS_PATH"] = str(venv_path)
+
+        for key, value in self.env.items():
+            if key == "PATH":
+                # extend PATH instead of replacing
+                env["PATH"] = value + ":" + env["PATH"]
+                continue
+            if key in env:
+                logger.info(
+                    "Overwriting environment variable %s=%s with user-specified value '%s'.",
+                    key,
+                    env[key],
+                    value,
+                )
+            env[key] = value
 
         process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -333,6 +385,9 @@ class Pip(VirtualPythonEnvironment):
         The cmd arguments to pass to `pip install`.
     creator : Callable[[Path], Any] | None, optional
         A callable for creating the venv, by default None
+    env  : dict[str, str], optional
+        A dictionary of environment variables which are forwarded to the
+        virtual environment, by default None
 
     """
 
@@ -344,6 +399,7 @@ class Pip(VirtualPythonEnvironment):
         *,
         args: Iterable[str],
         creator: Callable[[Path], Any] | None = None,
+        env: dict[str, str] | None = None,
     ):
         """
         Build Environment for using a venv and pip.
@@ -360,9 +416,12 @@ class Pip(VirtualPythonEnvironment):
             The cmd arguments to pass to `pip install`.
         creator : Callable[[Path], Any], optional
             A callable for creating the venv, by default None
+        env  : dict[str, str], optional
+            A dictionary of environment variables which are forwarded to the
+            virtual environment, by default None
 
         """
-        super().__init__(path, name, venv, creator=creator)
+        super().__init__(path, name, venv, creator=creator, env=env)
         self.args = args
 
     async def __aenter__(self) -> Self:
