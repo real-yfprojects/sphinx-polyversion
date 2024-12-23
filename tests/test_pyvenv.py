@@ -58,6 +58,20 @@ class TestVirtualPythonEnvionment:
         assert not (location / "bin" / "python").exists()
 
     @pytest.mark.asyncio()
+    async def test_run_without_creator_no_existing(self, tmp_path: Path):
+        """Test running a command without an existing venv and without creator."""
+        location = tmp_path / "novenv"
+
+        async with VirtualPythonEnvironment(tmp_path, "main", location) as env:
+            with pytest.raises(FileNotFoundError, match="There is no virtual"):
+                out, err, rc = await env.run(
+                    "python",
+                    "-c",
+                    "import sys; print(sys.prefix)",
+                    stdout=asyncio.subprocess.PIPE,
+                )
+
+    @pytest.mark.asyncio()
     async def test_run_without_creator(self, tmp_path: Path):
         """Test running a command in an existing venv."""
         location = tmp_path / "venv"
