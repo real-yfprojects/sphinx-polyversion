@@ -56,6 +56,8 @@ extensions = [
     "sphinx.ext.githubpages",
 ]
 
+autosummary_ignore_module_all = False
+
 exclude_patterns = []
 
 myst_enable_extensions = [

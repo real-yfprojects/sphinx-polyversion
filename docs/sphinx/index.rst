@@ -24,6 +24,8 @@ Table of Contents
     :maxdepth: 2
     :caption: Reference
 
+    api/sphinx_polyversion
+
 .. toctree::
     :maxdepth: 1
     :caption: Development
