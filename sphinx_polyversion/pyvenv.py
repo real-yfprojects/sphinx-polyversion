@@ -100,7 +100,7 @@ class VirtualPythonEnvironment(Environment):
     creator : Callable[[Path], Any], optional
         A callable for creating the venv, by default None
     env  : dict[str, str], optional
-        A dctionary of environment variables which are forwarded to the
+        A dictionary of environment variables which are overridden in the
         virtual environment, by default None
 
     Attributes
@@ -186,6 +186,33 @@ class VirtualPythonEnvironment(Environment):
             The dictionary that was passed with `env`.
 
         """
+        env["VIRTUAL_ENV"] = str(self.venv)
+        env["PATH"] = str(self.venv / "bin") + ":" + env["PATH"]
+        return env
+
+    def apply_overrides(self, env: dict[str, str]) -> dict[str, str]:
+        """
+        Prepare the environment for the build.
+
+        This method is used to modify the environment before running a
+        build command. It :py:meth:`activates <activate>` the python venv
+        and overrides those environment variables that were passed to the
+        :py:class:`constructor <VirtualPythonEnvironment>`.
+        `PATH` is never replaced but extended instead.
+
+        .. warning:: This modifies the given dictionary in-place.
+
+        Parameters
+        ----------
+        env : dict[str, str]
+            The environment to modify.
+
+        Returns
+        -------
+        dict[str, str]
+            The updated environment.
+
+        """
         # add user-supplied values to env
         for key, value in self.env.items():
             if key == "PATH":
@@ -200,8 +227,6 @@ class VirtualPythonEnvironment(Environment):
                     value,
                 )
             env[key] = value
-        env["VIRTUAL_ENV"] = str(self.venv)
-        env["PATH"] = str(self.venv / "bin") + ":" + env["PATH"]
         return env
 
     async def run(
@@ -212,8 +237,9 @@ class VirtualPythonEnvironment(Environment):
 
         This implementation passes the arguments to
         :func:`asyncio.create_subprocess_exec`. But alters `env` to
-        activate the correct python venv. If a python venv is already activated
-        this activation is overridden.
+        :py:meth:`activates <activate>` the correct python
+        and overrides the use-specified vars using :py:meth:`prepare_env`.
+        If a python venv is already activated this activation is overridden.
 
         Returns
         -------
@@ -226,7 +252,9 @@ class VirtualPythonEnvironment(Environment):
 
         """
         # activate venv
-        kwargs["env"] = self.activate(kwargs.get("env", os.environ).copy())
+        kwargs["env"] = self.activate(
+            self.apply_overrides(kwargs.get("env", os.environ).copy())
+        )
         return await super().run(*cmd, **kwargs)
 
 
@@ -246,7 +274,7 @@ class Poetry(VirtualPythonEnvironment):
     args : Iterable[str]
         The cmd arguments to pass to `poetry install`.
     env  : dict[str, str], optional
-        A dictionary of environment variables which are forwarded to the
+        A dictionary of environment variables which are overidden in the
         virtual environment, by default None
 
     """
@@ -300,6 +328,8 @@ class Poetry(VirtualPythonEnvironment):
         cmd += self.args
 
         env = os.environ.copy()
+        self.apply_overrides(env)
+
         env.pop("VIRTUAL_ENV", None)  # unset poetry env
         env["POETRY_VIRTUALENVS_IN_PROJECT"] = "False"
         venv_path = self.path / ".venv"
@@ -308,20 +338,6 @@ class Poetry(VirtualPythonEnvironment):
             venv_path = self.path / f".venv-{i}"
             i += 1
         env["POETRY_VIRTUALENVS_PATH"] = str(venv_path)
-
-        for key, value in self.env.items():
-            if key == "PATH":
-                # extend PATH instead of replacing
-                env["PATH"] = value + ":" + env["PATH"]
-                continue
-            if key in env:
-                logger.info(
-                    "Overwriting environment variable %s=%s with user-specified value '%s'.",
-                    key,
-                    env[key],
-                    value,
-                )
-            env[key] = value
 
         process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -386,7 +402,7 @@ class Pip(VirtualPythonEnvironment):
     creator : Callable[[Path], Any] | None, optional
         A callable for creating the venv, by default None
     env  : dict[str, str], optional
-        A dictionary of environment variables which are forwarded to the
+        A dictionary of environment variables which are overridden in the
         virtual environment, by default None
 
     """
@@ -417,7 +433,7 @@ class Pip(VirtualPythonEnvironment):
         creator : Callable[[Path], Any], optional
             A callable for creating the venv, by default None
         env  : dict[str, str], optional
-            A dictionary of environment variables which are forwarded to the
+            A dictionary of environment variables which are overridden in the
             virtual environment, by default None
 
         """
@@ -444,7 +460,7 @@ class Pip(VirtualPythonEnvironment):
         process = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=self.path,
-            env=self.activate(os.environ.copy()),
+            env=self.activate(self.apply_overrides(os.environ.copy())),
             stdout=PIPE,
             stderr=PIPE,
         )
