@@ -4,7 +4,7 @@ Public API
 ==========
 
 .. autosummary::
-    :toctree: _autosummary
+    :toctree: .
     :template: custom-module-template.rst
     :recursive:
 

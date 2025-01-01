@@ -57,6 +57,9 @@ extensions = [
 ]
 
 autosummary_ignore_module_all = False
+autodoc_default_options = {
+    "special-members": "__call__, __aenter__, __aexit__",
+}
 
 exclude_patterns = []
 
@@ -94,6 +97,7 @@ html_css_files = [
     #
     # style the version selector
     "css/version-selector.css",
+    "css/api-docs.css",
 ]
 
 templates_path = [
