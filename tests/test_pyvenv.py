@@ -106,6 +106,23 @@ class TestVirtualPythonEnvionment:
             assert rc == 0
             assert str(location) == out.strip()
 
+    @pytest.mark.asyncio
+    async def test_run_with_env_variables(self, tmp_path: Path):
+        """Test passing an environment variable to a venv."""
+        location = tmp_path / "venv"
+
+        async with VirtualPythonEnvironment(
+            tmp_path, "main", location, creator=VenvWrapper(), env={"TESTVAR": "1"}
+        ) as env:
+            out, err, rc = await env.run(
+                "python",
+                "-c",
+                "import os; print(os.environ['TESTVAR'])",
+                stdout=asyncio.subprocess.PIPE,
+            )
+            assert rc == 0
+            assert out.strip() == "1"
+
 
 class TestPip:
     """Test the `Pip` class."""
@@ -139,6 +156,38 @@ class TestPip:
             )
             assert rc == 0
 
+    @pytest.mark.asyncio
+    async def test_run_with_env_variables(self, tmp_path: Path):
+        """Test passing an environment variable to a venv."""
+        location = tmp_path / "venv"
+
+        # create env
+        await VenvWrapper(with_pip=True)(location)
+
+        # test that tomli is not installed
+        proc = await asyncio.create_subprocess_exec(
+            str(location / "bin/python"),
+            "-c",
+            "import tomli",
+            stdout=asyncio.subprocess.PIPE,
+        )
+        rc = await proc.wait()
+        assert rc == 1
+
+        # init env with tomli
+        async with Pip(
+            tmp_path, "main", location, args=["tomli"], env={"TESTVAR": "1"}
+        ) as env:
+            # test that tomli is installed
+            out, err, rc = await env.run(
+                "python",
+                "-c",
+                "import os; print(os.environ['TESTVAR'])",
+                stdout=asyncio.subprocess.PIPE,
+            )
+            assert rc == 0
+            assert out.strip() == "1"
+
 
 class TestPoetry:
     """Test the `Poetry` environment."""
@@ -169,7 +218,7 @@ class TestPoetry:
         )
 
         # create poetry env
-        async with Poetry(tmp_path, "main", args=[]) as env:
+        async with Poetry(tmp_path, "main", args=[], env={"TESTVAR": "1"}) as env:
             # check sourcing works
             out, err, rc = await env.run(
                 "python",
@@ -197,6 +246,16 @@ class TestPoetry:
                 stdout=asyncio.subprocess.PIPE,
             )
             assert rc == 0
+
+            # test that custom environment variables are passed correctly
+            out, err, rc = await env.run(
+                "python",
+                "-c",
+                "import os; print(os.environ['TESTVAR'])",
+                stdout=asyncio.subprocess.PIPE,
+            )
+            assert rc == 0
+            assert out.strip() == "1"
 
     @pytest.mark.asyncio
     async def test_simple_project_with_optional_deps(self, tmp_path: Path):
