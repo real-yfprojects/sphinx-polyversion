@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+        uses: actions/checkout@v4
 
       - name: Setup
         id: setup
@@ -41,7 +41,7 @@ jobs:
       # Upload changed files on pre-commit error
       - name: Upload changed files
         if: ${{ failure() && steps.changed-files.outputs.files }}
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        uses: actions/upload-artifact@v4
         with:
           name: Files modified by pre-commit
           path: ${{ steps.changed-files.outputs.files }}
@@ -52,10 +52,10 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+        uses: actions/checkout@v4
 
       - name: setup python
-        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -84,7 +84,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+        uses: actions/checkout@v4
 
       - name: Setup
         id: setup
@@ -96,14 +96,14 @@ jobs:
         run: make test
 
       # Upload summary of test results
-      - uses: test-summary/action@v2.1
+      - uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
         if: failure() || success()
         with:
           paths: report.xml
 
       # Upload coverage to job summary
       - name: Summarize coverage
-        uses: livewing/lcov-job-summary@0a9952db27f98def2ba2de3189c6b24acc4c5501 # v1.1.0
+        uses: livewing/lcov-job-summary@28126fb20073f4624d0f8e2c6f4afbe1c0670cbb # v1.2.0
         if: matrix.extras == 'all' && (failure() || success())
         with:
           lcov: coverage.lcov
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+        uses: actions/checkout@v4
 
       - name: Setup
         id: setup
@@ -126,7 +126,7 @@ jobs:
 
       # Upload build
       - name: Upload build
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
+        uses: actions/upload-artifact@v4
         with:
           name: Docs
           path: docs/build

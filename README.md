@@ -231,6 +231,8 @@ Contributions of all kinds are welcome. That explicitely includes suggestions fo
 PRs are greatly appreciated as well. But please make sure that your change is wanted by opening an issue about it first before you waste your time with a PR
 that isn't merged in the end.
 
+By contributing you affirm the [Developer Certificate of Origin](https://developercertificate.org/) and license your work under the terms of this repository.
+
 ## License
 
 MIT License <br>

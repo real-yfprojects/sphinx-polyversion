@@ -185,7 +185,18 @@ class VirtualPythonEnvironment(Environment):
         dict[str, str]
             The dictionary that was passed with `env`.
 
+        Raises
+        ------
+        FileNotFoundError
+            If no environment is located at the location `venv`.
+
         """
+        if not self.venv.exists():
+            raise FileNotFoundError(
+                f"""There is no virtual environment at the path {self.venv}.
+                Please ensure that the path points to an existing virtual environment, or
+                supply a creator to automatically create the environment."""
+            )
         env["VIRTUAL_ENV"] = str(self.venv)
         env["PATH"] = str(self.venv / "bin") + ":" + env["PATH"]
         return env
