@@ -23,7 +23,7 @@ from typing import (
     runtime_checkable,
 )
 
-__all__ = ["Encoder", "Decoder", "RecursionWarning", "std_hook"]
+__all__ = ["Decoder", "Encoder", "RecursionWarning", "std_hook"]
 
 
 #: Python types representing a key in JSON mapping
@@ -226,7 +226,7 @@ class Encoder(json.JSONEncoder):
         if hasattr(o, "_json_fields"):
             # type JSONable
             fields = o._json_fields()  # type: ignore
-            if t := type(o) == type(fields):
+            if t := type(o) is type(fields):
                 warnings.warn(
                     f"Class {t} returns itself as json field container",
                     RecursionWarning,
@@ -500,7 +500,7 @@ class JSONHook(Protocol):
         """
 
     @staticmethod
-    def from_json(cls: str, o: JSON_TYPE) -> Any:
+    def from_json(cls: str, o: JSON_TYPE) -> Any:  # noqa: PLW0211
         """
         Instanciate an object from its fields.
 
@@ -550,7 +550,7 @@ class std_hook(JSONHook):
         return None
 
     @staticmethod
-    def from_json(cls: str, o: JSON_TYPE) -> Any:
+    def from_json(cls: str, o: JSON_TYPE) -> Any:  # noqa: PLW0211
         """Decode an object."""
         o = cast(str, o)
         return datetime.fromisoformat(o)

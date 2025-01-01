@@ -34,14 +34,14 @@ runs:
       shell: bash
 
     - name: setup python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       if: inputs.cache-python == 'true'
       with:
         python-version: ${{ inputs.python-version }}
         cache: "pip"
 
     - name: setup python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       if: inputs.cache-python != 'true'
       with:
         python-version: ${{ inputs.python-version }}
@@ -69,7 +69,7 @@ runs:
       shell: bash
     - name: Configure Caching for Pre-Commit
       if: ${{ inputs.setup-pre-commit == 'true' }}
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pre-commit
         key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
