@@ -68,7 +68,7 @@ repos:
 
   # Static type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: e5ea6670624c24f8321f6328ef3176dbba76db46 # frozen: v1.10.0
+    rev: bbc3dc1f890007061f18f17e2334f216ea9e5df7 # frozen: v1.14.1
     hooks:
       - id: mypy
         exclude: ^(tests|docs)
