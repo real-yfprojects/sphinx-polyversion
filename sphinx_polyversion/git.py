@@ -33,7 +33,7 @@ from sphinx_polyversion.json import GLOBAL_DECODER
 from sphinx_polyversion.utils import async_all
 from sphinx_polyversion.vcs import VersionProvider
 
-__all__ = ["GitRef", "GitRefType", "Git", "file_predicate", "refs_by_type"]
+__all__ = ["Git", "GitRef", "GitRefType", "file_predicate", "refs_by_type"]
 
 logger = getLogger(__name__)
 

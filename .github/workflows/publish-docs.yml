@@ -29,7 +29,7 @@ jobs:
     steps:
       # Checkout current ref to get the current version of the build script
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Install poetry
       - name: Install poetry
@@ -41,7 +41,7 @@ jobs:
         run: echo venv_path="$(poetry config virtualenvs.path)" >> $GITHUB_ENV
 
       - name: Retrieve cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v4
         id: cache-restore
         with:
           path: ${{ env.venv_path }}
@@ -57,7 +57,7 @@ jobs:
 
       # Configure pages provides deployment URL
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v5
 
       # Prepare
       - name: Fetch tags and branches
@@ -83,7 +83,7 @@ jobs:
           echo 'cache_key=publish-docs|poetry|'"$(find ${{ env.venv_path }} -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
 
       - name: Upload new cache
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v4
         continue-on-error: true
         if: steps.cache-restore.outputs.cache-matched-key != env.cache_key
         with:
@@ -92,7 +92,7 @@ jobs:
 
       # Upload built docs
       - name: Upload build artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: "build"
           retention-days: 7
@@ -100,4 +100,4 @@ jobs:
       # Deploy uploaded artifact
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
