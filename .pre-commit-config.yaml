@@ -55,7 +55,7 @@ repos:
 
   # Lint python code with ruff (also sorts imports)
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "bbaf495f2dc6ce2853c91dc0b2c75d3b8249c15c" # frozen: v0.1.15
+    rev: "f0b5944bef86f50d875305821a0ab0d8c601e465" # frozen: v0.8.4
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]

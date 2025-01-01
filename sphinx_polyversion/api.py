@@ -9,7 +9,7 @@ from typing import Any
 from sphinx_polyversion.json import GLOBAL_DECODER
 from sphinx_polyversion.main import get_parser
 
-__all__ = ["load", "apply_overrides"]
+__all__ = ["apply_overrides", "load"]
 
 
 class LoadError(RuntimeError):

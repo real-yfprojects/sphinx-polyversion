@@ -38,7 +38,7 @@ sphinx-polyversion = "sphinx_polyversion.main:main"
 
 [tool.poetry.group.lint.dependencies]
 mypy  = "^1.7.1"
-ruff  = "^0.1.6"
+ruff  = "^0.8.4"
 black = "^23.11.0"
 
 [tool.poetry.group.test.dependencies]
@@ -79,7 +79,9 @@ ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py38"
+line-length    = 88     # Same as Black.
 
+[tool.ruff.lint]
 select = [
     "T",     # flake8-print
     "I",     # isort
@@ -126,18 +128,15 @@ ignore = [
     "TD002", # missing author
 ]
 
-# Same as Black.
-line-length = 88
-
 # Allow unused variables when underscore-prefixed or of form `dummyN`.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?)|dummy\\d*)$"
 
 # Less strict rules for docs/* and tests/*.
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "docs/*"  = ["PLR", "D1", "PTH", "INP"]
 "tests/*" = ["PLR2004"]
 
-[tool.ruff.pylint]
+[tool.ruff.lint.pylint]
 # Allow more arguments for complexity check
 max-args = 8
 
