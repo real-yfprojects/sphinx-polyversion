@@ -58,6 +58,8 @@ extensions = [
 
 autosummary_ignore_module_all = False
 autodoc_default_options = {
+    "members": True,
+    "show-inheritance": True,
     "special-members": "__call__, __aenter__, __aexit__",
 }
 
