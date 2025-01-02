@@ -233,6 +233,8 @@ that isn't merged in the end.
 
 By contributing you affirm the [Developer Certificate of Origin](https://developercertificate.org/) and license your work under the terms of this repository.
 
+New top-level modules must be added to `docs/sphinx/api/sphinx_polyversion.rst`.
+
 ## License
 
 MIT License <br>

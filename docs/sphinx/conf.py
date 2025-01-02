@@ -56,6 +56,13 @@ extensions = [
     "sphinx.ext.githubpages",
 ]
 
+autosummary_ignore_module_all = False
+autodoc_default_options = {
+    "members": True,
+    "show-inheritance": True,
+    "special-members": "__call__, __aenter__, __aexit__",
+}
+
 exclude_patterns = []
 
 myst_enable_extensions = [
@@ -92,6 +99,7 @@ html_css_files = [
     #
     # style the version selector
     "css/version-selector.css",
+    "css/api-docs.css",
 ]
 
 templates_path = [
