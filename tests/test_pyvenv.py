@@ -128,7 +128,7 @@ class TestPip:
     """Test the `Pip` class."""
 
     @pytest.mark.asyncio
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_creation_with_venv(self, tmp_path: Path):
         """Test the `create_venv` method with a `VenvWrapper`."""
         location = tmp_path / "venv"
@@ -144,7 +144,7 @@ class TestPip:
         await env.create_venv()
         assert (location / "bin" / "python").exists()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_creation_without_creator(self, tmp_path: Path):
         """Test the `create_venv` method without any creator."""
         location = tmp_path / "venv"
@@ -153,7 +153,7 @@ class TestPip:
         await env.create_venv()
         assert not (location / "bin" / "python").exists()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_run_without_creator(self, tmp_path: Path):
         """Test running a command in an existing venv."""
         location = tmp_path / "venv"
@@ -173,7 +173,7 @@ class TestPip:
             assert rc == 0
             assert str(location) == out.strip()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_run_with_creator(self, tmp_path: Path):
         """Test running a command in a new venv."""
         location = tmp_path / "venv"
@@ -195,7 +195,7 @@ class TestPip:
             assert rc == 0
             assert str(location) == out.strip()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_creation_with_venv_temporary(self, tmp_path: Path):
         """Test the `create_venv` method with a `VenvWrapper`."""
         location = "tmpvenv"
@@ -211,7 +211,7 @@ class TestPip:
         await env.create_venv()
         assert (tmp_path / location / "bin" / "python").exists()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_creation_without_creator_temporary(self, tmp_path: Path):
         """Test the `create_venv` method without any creator."""
         location = "tmpvenv"
@@ -221,7 +221,7 @@ class TestPip:
         ):
             Pip(tmp_path, "main", location, args=["tomli"], temporary=True)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_run_with_creator_temporary(self, tmp_path: Path):
         """Test running a command in a new venv."""
         location = "tmpvenv"
@@ -243,7 +243,7 @@ class TestPip:
             assert rc == 0
             assert str(tmp_path / location) == out.strip()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_install_into_existing_venv(self, tmp_path: Path):
         """Test installing a package into an existing venv."""
         location = tmp_path / "venv"
