@@ -415,7 +415,7 @@ class Pip(VirtualPythonEnvironment):
     temporary   : bool, optional
         A flag to specify whether the environment should be created in the
         temporary directory, by default False. If this is True, `creator`
-        must not be None.
+        must not be None and `venv` will be treated relative to `path`.
     env  : dict[str, str], optional
         A dictionary of environment variables which are overridden in the
         virtual environment, by default None
@@ -451,7 +451,7 @@ class Pip(VirtualPythonEnvironment):
         temporary   : bool, optional
             A flag to specify whether the environment should be created in the
             temporary directory, by default False. If this is True, `creator`
-            must not be None.
+            must not be None and `venv` will be treated relative to `path`.
         env  : dict[str, str], optional
             A dictionary of environment variables which are overridden in the
             virtual environment, by default None
@@ -462,7 +462,6 @@ class Pip(VirtualPythonEnvironment):
             If `temporary` is enabled but no valid creator is provided.
 
         """
-        self.args = args
         if temporary:
             if creator is None:
                 raise ValueError(
@@ -473,6 +472,7 @@ class Pip(VirtualPythonEnvironment):
                 )
             venv = path / venv
         super().__init__(path, name, venv, creator=creator, env=env)
+        self.args = args
 
     async def __aenter__(self) -> Self:
         """
