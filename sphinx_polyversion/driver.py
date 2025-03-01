@@ -508,7 +508,7 @@ class DefaultDriver(Driver[JRT, ENV], Generic[JRT, ENV, S]):
         self.encoder = encoder or GLOBAL_ENCODER
         self.root_data_factory = root_data_factory
 
-        if isinstance(builder, dict) or (isinstance(env, dict) and not selector):
+        if (isinstance(builder, dict) or isinstance(env, dict)) and not selector:
             raise ValueError(
                 "Must provide selector if a mapping is passed for `builder` or `env`."
             )
