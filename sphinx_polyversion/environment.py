@@ -37,6 +37,11 @@ class Environment:
     name : str
         The name of the environment (usually the name of the current revision).
 
+    Methods
+    -------
+    run(*cmd: str, decode: bool = True, **kwargs: Any)
+        Run a OS process in the environment.
+
     """
 
     path: Path

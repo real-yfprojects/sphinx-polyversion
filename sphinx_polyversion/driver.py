@@ -70,6 +70,11 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
     mock : MockData[RT] | None | Literal[False], optional
         Only build from local files and mock building all docs using the data provided.
 
+    Methods
+    -------
+    run()
+        Build all revisions.
+
     """
 
     #: The version provider used by the driver e.g. to determine build targets.

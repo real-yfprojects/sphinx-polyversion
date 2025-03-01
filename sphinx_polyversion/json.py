@@ -300,6 +300,20 @@ class Decoder(json.JSONDecoder):
     strict : bool, optional
         Whether to disallow control characters, by default True
 
+    Attributes
+    ----------
+    registered_types : List[type]
+        The transformable types registered for decoding.
+    hooks : List[Type[JSONHook]]
+        hooks registered for decoding.
+
+    Methods
+    -------
+    register(*t)
+        Register a hook or a tranformable type.
+    register_from(decoder)
+        Register all types registered by another decoder.
+
     """
 
     def __init__(
