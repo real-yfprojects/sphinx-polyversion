@@ -147,7 +147,7 @@ class TestPoetry:
     async def test_simple_project(self, tmp_path: Path):
         """Test installing a simple project with poetry."""
         # create source files
-        src_location = tmp_path / "src"
+        src_location = tmp_path / "test"
         src_location.mkdir()
         src_location.joinpath("__init__.py").touch()
 
@@ -202,7 +202,7 @@ class TestPoetry:
     async def test_simple_project_with_optional_deps(self, tmp_path: Path):
         """Test installing a simple project with poetry."""
         # create source files
-        src_location = tmp_path / "src"
+        src_location = tmp_path / "test"
         src_location.mkdir()
         src_location.joinpath("__init__.py").touch()
 
@@ -292,7 +292,7 @@ class TestPoetry:
     async def test_create_two_concurrently(self, tmp_path: Path):
         """Test creating two environments concurrently."""
         # create source files
-        src_location = tmp_path / "src"
+        src_location = tmp_path / "test"
         src_location.mkdir()
         src_location.joinpath("__init__.py").touch()
 
