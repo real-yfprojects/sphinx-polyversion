@@ -485,7 +485,7 @@ class Git(VersionProvider[GitRef]):
         """
         Check whether a revision should be build.
 
-        This predicate is used by :method:`retrieve` to filter the
+        This predicate is used by :meth:`retrieve` to filter the
         git references retrieved.
 
         Parameters

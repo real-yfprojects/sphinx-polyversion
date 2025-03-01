@@ -74,7 +74,7 @@ class Transformable(Protocol):
         ----------
         o : Any
             The deserialized fields as they were returned
-            by :method:`_json_fields` earlier.
+            by :meth:`_json_fields` earlier.
 
         Returns
         -------
@@ -262,7 +262,7 @@ class Encoder(json.JSONEncoder):
 
         Notes
         -----
-        Calls :method:`transform` internally.
+        Calls :meth:`transform` internally.
 
         """
         return self.transform(o)
@@ -285,7 +285,7 @@ class Decoder(json.JSONDecoder):
     protocol or a :class:`JSONHook` has to be implemented for the type.
     2. The object has to be encoded in the correct format as done by :class:`Encoder`.
     3. THe hook or class has to be registered with this decoder. You can use
-    :method:`register` for that. This method can also be used as a class decorator.
+    :meth:`register` for that. This method can also be used as a class decorator.
 
     Parameters
     ----------
@@ -505,7 +505,7 @@ class JSONHook(Protocol):
         Instanciate an object from its fields.
 
         This method is only called with supported instances that were
-        encoded with the help of :method:`fields`.
+        encoded with the help of :meth:`fields`.
 
         Parameters
         ----------
