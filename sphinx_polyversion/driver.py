@@ -11,6 +11,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from inspect import isawaitable
 from logging import getLogger
 from pathlib import Path
+from subprocess import CalledProcessError
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -33,6 +34,7 @@ from typing import (
 
 from sphinx_polyversion.builder import Builder, BuildError
 from sphinx_polyversion.environment import Environment
+from sphinx_polyversion.git import get_unignored_files
 from sphinx_polyversion.json import GLOBAL_ENCODER, Encoder, JSONable
 from sphinx_polyversion.utils import shift_path
 
@@ -333,8 +335,20 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp)
             # copy source files
-            logger.info("Copying source files...")
-            shutil.copytree(self.root, path, symlinks=True, dirs_exist_ok=True)
+            logger.info("Copying source files (except for files ignored by git)...")
+            try:
+                files = await get_unignored_files(self.root)
+                for filename in files:
+                    source = self.root / filename
+                    target = path / filename
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    if not target.exists():
+                        shutil.copy2(source, target, follow_symlinks=False)
+            except CalledProcessError:
+                logger.warning(
+                    "Could not list un-ignored files using git. Copying full working directory..."
+                )
+                shutil.copytree(self.root, path, symlinks=True, dirs_exist_ok=True)
             # setup build environment (e.g. poetry/pip venv)
             async with await self.init_environment(path, rev) as env:
                 # construct metadata to pass to the build process
