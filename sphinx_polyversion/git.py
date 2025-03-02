@@ -220,7 +220,9 @@ async def _copy_tree(
         )
         out, err = await process.communicate()
         if process.returncode:
-            raise CalledProcessError(process.returncode, " ".join(cmd), stderr=err)
+            raise CalledProcessError(
+                process.returncode, " ".join(git_init_cmd), stderr=err
+            )
 
 
 async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:

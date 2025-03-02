@@ -11,7 +11,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from inspect import isawaitable
 from logging import getLogger
 from pathlib import Path
-from subprocess import CalledProcessError
+from subprocess import PIPE, CalledProcessError
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -344,6 +344,19 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
                     target.parent.mkdir(parents=True, exist_ok=True)
                     if not target.exists():
                         shutil.copy2(source, target, follow_symlinks=False)
+
+                # as .git is not copied, we have to initialize a dummy git repository
+                # in the copied directory (for setuptools-scm)
+                git_init_cmd = ("git", "init", "--initial-branch=dummy")
+                with tempfile.SpooledTemporaryFile(max_size=1024) as f:
+                    process = await asyncio.create_subprocess_exec(
+                        *git_init_cmd, cwd=tmp, stdout=f, stderr=PIPE
+                    )
+                    out, err = await process.communicate()
+                    if process.returncode:
+                        raise CalledProcessError(
+                            process.returncode, " ".join(git_init_cmd), stderr=err
+                        )
             except CalledProcessError:
                 logger.warning(
                     "Could not list un-ignored files using git. Copying full working directory..."
