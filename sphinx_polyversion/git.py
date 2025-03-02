@@ -202,6 +202,7 @@ async def _copy_tree(
     """
     # retrieve commit contents as tar archive
     cmd = ("git", "archive", "--format", "tar", ref)
+    git_init_cmd = ("git", "init", "--initial-branch=dummy")
     with tempfile.SpooledTemporaryFile(max_size=buffer_size) as f:
         process = await asyncio.create_subprocess_exec(
             *cmd, cwd=repo, stdout=f, stderr=PIPE
@@ -213,6 +214,15 @@ async def _copy_tree(
         f.seek(0)
         with tarfile.open(fileobj=f) as tf:
             tf.extractall(str(dest))
+        # initialize dummy git repository in copied directory (required for setuptools-scm)
+        process = await asyncio.create_subprocess_exec(
+            *git_init_cmd, cwd=str(dest), stdout=f, stderr=PIPE
+        )
+        out, err = await process.communicate()
+        if process.returncode:
+            raise CalledProcessError(
+                process.returncode, " ".join(git_init_cmd), stderr=err
+            )
 
 
 async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
@@ -248,6 +258,34 @@ async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
     )
     rc = await process.wait()
     return rc == 0
+
+
+async def get_unignored_files(directory: Path) -> list[Path]:
+    """
+    List all unignored files in the directory.
+
+    Parameters
+    ----------
+    directory : Path
+        Any directory in the repo.
+
+    Returns
+    -------
+    Path
+        The paths to all un-ignored files in the directory (recursive)
+
+    """
+    cmd = (
+        "git",
+        "ls-files",
+        "--cached",
+        "--others",
+        "--exclude-standard",
+    )
+    process = await asyncio.create_subprocess_exec(*cmd, cwd=directory, stdout=PIPE)
+    out, err = await process.communicate()
+    files = out.decode().split("\n")
+    return [Path(path.strip()) for path in files]
 
 
 # -- VersionProvider API -----------------------------------------------------
