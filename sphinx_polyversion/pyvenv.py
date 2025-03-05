@@ -504,6 +504,7 @@ class Pip(VirtualPythonEnvironment):
 
         self.logger.debug("Installation output:\n %s", out)
         if process.returncode != 0:
+            self.logger.error("Installation error:\n %s", err)
             raise BuildError from CalledProcessError(
                 cast(int, process.returncode), " ".join(cmd), out, err
             )
