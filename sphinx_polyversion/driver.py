@@ -342,7 +342,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
                     source = self.root / filename
                     target = path / filename
                     target.parent.mkdir(parents=True, exist_ok=True)
-                    if not target.exists():
+                    if source.exists() and not target.exists():
                         shutil.copy2(source, target, follow_symlinks=False)
             except CalledProcessError:
                 logger.warning(
