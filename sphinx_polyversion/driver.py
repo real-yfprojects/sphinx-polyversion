@@ -337,10 +337,9 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
             # copy source files
             logger.info("Copying source files (except for files ignored by git)...")
             try:
-                files = await get_unignored_files(self.root)
-                for filename in files:
-                    source = self.root / filename
-                    target = path / filename
+                async for file in get_unignored_files(self.root):
+                    source = self.root / file
+                    target = path / file
                     target.parent.mkdir(parents=True, exist_ok=True)
                     if source.exists() and not target.exists():
                         shutil.copy2(source, target, follow_symlinks=False)

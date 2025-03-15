@@ -259,7 +259,7 @@ async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
     return rc == 0
 
 
-async def get_unignored_files(directory: Path) -> list[Path]:
+async def get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
     """
     List all unignored files in the directory.
 
@@ -270,7 +270,7 @@ async def get_unignored_files(directory: Path) -> list[Path]:
 
     Returns
     -------
-    Path
+    AsyncGenerator[Path, None]
         The paths to all un-ignored files in the directory (recursive)
 
     """
@@ -283,8 +283,8 @@ async def get_unignored_files(directory: Path) -> list[Path]:
     )
     process = await asyncio.create_subprocess_exec(*cmd, cwd=directory, stdout=PIPE)
     out, err = await process.communicate()
-    files = out.decode().split("\n")
-    return [Path(path.strip()) for path in files]
+    for line in out.decode().splitlines():
+        yield Path(line.strip())
 
 
 # -- VersionProvider API -----------------------------------------------------
