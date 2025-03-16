@@ -11,6 +11,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from inspect import isawaitable
 from logging import getLogger
 from pathlib import Path
+from subprocess import PIPE, CalledProcessError
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
@@ -33,6 +34,7 @@ from typing import (
 
 from sphinx_polyversion.builder import Builder, BuildError
 from sphinx_polyversion.environment import Environment
+from sphinx_polyversion.git import get_unignored_files
 from sphinx_polyversion.json import GLOBAL_ENCODER, Encoder, JSONable
 from sphinx_polyversion.utils import shift_path
 
@@ -333,8 +335,32 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp)
             # copy source files
-            logger.info("Copying source files...")
-            shutil.copytree(self.root, path, symlinks=True, dirs_exist_ok=True)
+            logger.info("Copying source files (except for files ignored by git)...")
+            try:
+                async for file in get_unignored_files(self.root):
+                    source = self.root / file
+                    target = path / file
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    if source.exists() and not target.exists():
+                        shutil.copy2(source, target, follow_symlinks=False)
+
+                # as .git is not copied, we have to initialize a dummy git repository
+                # in the copied directory (for setuptools-scm)
+                git_init_cmd = ("git", "init", "--initial-branch=dummy")
+                with tempfile.SpooledTemporaryFile(max_size=1024) as f:
+                    process = await asyncio.create_subprocess_exec(
+                        *git_init_cmd, cwd=tmp, stdout=f, stderr=PIPE
+                    )
+                    out, err = await process.communicate()
+                    if process.returncode:
+                        raise CalledProcessError(
+                            process.returncode, " ".join(git_init_cmd), stderr=err
+                        )
+            except CalledProcessError:
+                logger.warning(
+                    "Could not list un-ignored files using git. Copying full working directory..."
+                )
+                shutil.copytree(self.root, path, symlinks=True, dirs_exist_ok=True)
             # setup build environment (e.g. poetry/pip venv)
             async with await self.init_environment(path, rev) as env:
                 # construct metadata to pass to the build process
