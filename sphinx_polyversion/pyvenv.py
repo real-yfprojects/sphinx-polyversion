@@ -31,7 +31,74 @@ logger = getLogger(__name__)
 
 
 class VenvWrapper(EnvBuilder):
-    """Build your virtual environments using the build-in venv module."""
+    """
+    Build your virtual environments using the built-in venv module.
+
+    Parameters
+    ----------
+    system_site_packages : bool, optional
+        If True, the system (global) site-packages dir is available to created
+        environments.
+    clear : bool, optional
+        If True, delete the contents of the environment directory if
+        it already exists, before environment creation.
+    symlinks : bool, optional
+        If True, attempt to symlink rather than copy files into
+        virtual environment.
+    upgrade : bool, optional
+        If True, upgrade an existing virtual environment.
+    with_pip : bool, optional
+        If True, ensure pip is installed in the virtual environment
+    prompt : bool, optional
+        Alternative terminal prefix for the environment.
+    kwargs : Any
+        Additional keyword arguments passed to EnvBuilder.__init__
+
+    """
+
+    def __init__(
+        self,
+        system_site_packages: bool = False,
+        clear: bool = False,
+        symlinks: bool = False,
+        upgrade: bool = False,
+        with_pip: bool = True,
+        prompt: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Build your virtual environments using the built-in venv module.
+
+        Parameters
+        ----------
+        system_site_packages : bool, optional
+            If True, the system (global) site-packages dir is available to created
+            environments.
+        clear : bool, optional
+            If True, delete the contents of the environment directory if
+            it already exists, before environment creation.
+        symlinks : bool, optional
+            If True, attempt to symlink rather than copy files into
+            virtual environment.
+        upgrade : bool, optional
+            If True, upgrade an existing virtual environment.
+        with_pip : bool, optional
+            If True, ensure pip is installed in the virtual environment
+        prompt : bool, optional
+            Alternative terminal prefix for the environment.
+        kwargs : Any
+            Additional keyword arguments passed to EnvBuilder.__init__
+
+        """
+        super().__init__(
+            system_site_packages=system_site_packages,
+            clear=clear,
+            symlinks=symlinks,
+            upgrade=upgrade,
+            with_pip=with_pip,
+            prompt=prompt,
+            **kwargs,
+        )
 
     async def __call__(self, path: Path) -> None:
         """
