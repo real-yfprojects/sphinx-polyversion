@@ -213,6 +213,42 @@ async def _copy_tree(
         f.seek(0)
         with tarfile.open(fileobj=f) as tf:
             tf.extractall(str(dest))
+    # initialize dummy git repository in copied directory (required for setuptools-scm)
+    await init_dummy_repo(repo, ref, dest)
+
+
+async def init_dummy_repo(repo: Path, ref: str, dest: str | Path) -> None:
+    """
+    Initialize an empty dummy repository at the dest in the file system.
+
+    Parameters
+    ----------
+    repo : Path
+        The repo of the ref
+    ref : str
+        The ref
+    dest : Union[str, Path]
+        The destination to initialize the repository at.
+
+    Raises
+    ------
+    CalledProcessError
+        The git process exited with an error.
+
+    """
+    git_dir = Path(dest) / ".git"
+    if git_dir.exists():
+        logger.debug("Folder '%s' exists. Not creating dummy git repository", git_dir)
+        return
+    cmd = (
+        "git",
+        "init",
+        "--initial-branch=dummy",
+    )
+    process = await asyncio.create_subprocess_exec(*cmd, cwd=dest, stdout=PIPE)
+    out, err = await process.communicate()
+    if process.returncode:
+        raise CalledProcessError(process.returncode, " ".join(cmd), stderr=err)
 
 
 async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
