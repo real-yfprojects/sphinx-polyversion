@@ -185,8 +185,11 @@ BUILDER = {
 ENVIRONMENT = {
     None: Poetry.factory(args="--sync".split()),  # first version
     "v1.5.7": Poetry.factory(args="--only sphinx --sync".split()),
-    "v1.8.2": Poetry.factory(args="--only dev --sync".split()),
+    "v1.8.2": Poetry.factory(args="--only dev --sync".split(), env={"MY_VAR": "value"}),
+    # use a pre-existing environment at the location ./.venv
     "v3.0.0": Pip.factory(venv=Path(".venv"), args="-e . -r requirements.txt".split()),
+    # dynamically create an environment in the temporary build directory
+    "v4.*.*": Pip.factory(venv=Path(".venv"), args="-e . -r requirements.txt".split(), creator=VenvWrapper(), temporary=True),
 }
 
 # ...
@@ -230,6 +233,10 @@ DefaultDriver(
 Contributions of all kinds are welcome. That explicitely includes suggestions for enhancing the API, the architecture or the documentation of the project.
 PRs are greatly appreciated as well. But please make sure that your change is wanted by opening an issue about it first before you waste your time with a PR
 that isn't merged in the end.
+
+By contributing you affirm the [Developer Certificate of Origin](https://developercertificate.org/) and license your work under the terms of this repository.
+
+New top-level modules must be added to `docs/sphinx/api/sphinx_polyversion.rst`.
 
 ## License
 

@@ -23,7 +23,7 @@ from typing import (
     runtime_checkable,
 )
 
-__all__ = ["Encoder", "Decoder", "RecursionWarning", "std_hook"]
+__all__ = ["Decoder", "Encoder", "RecursionWarning", "std_hook"]
 
 
 #: Python types representing a key in JSON mapping
@@ -74,7 +74,7 @@ class Transformable(Protocol):
         ----------
         o : Any
             The deserialized fields as they were returned
-            by :method:`_json_fields` earlier.
+            by :meth:`_json_fields` earlier.
 
         Returns
         -------
@@ -226,7 +226,7 @@ class Encoder(json.JSONEncoder):
         if hasattr(o, "_json_fields"):
             # type JSONable
             fields = o._json_fields()  # type: ignore
-            if t := type(o) == type(fields):
+            if t := type(o) is type(fields):
                 warnings.warn(
                     f"Class {t} returns itself as json field container",
                     RecursionWarning,
@@ -262,7 +262,7 @@ class Encoder(json.JSONEncoder):
 
         Notes
         -----
-        Calls :method:`transform` internally.
+        Calls :meth:`transform` internally.
 
         """
         return self.transform(o)
@@ -285,7 +285,7 @@ class Decoder(json.JSONDecoder):
     protocol or a :class:`JSONHook` has to be implemented for the type.
     2. The object has to be encoded in the correct format as done by :class:`Encoder`.
     3. THe hook or class has to be registered with this decoder. You can use
-    :method:`register` for that. This method can also be used as a class decorator.
+    :meth:`register` for that. This method can also be used as a class decorator.
 
     Parameters
     ----------
@@ -500,12 +500,12 @@ class JSONHook(Protocol):
         """
 
     @staticmethod
-    def from_json(cls: str, o: JSON_TYPE) -> Any:
+    def from_json(cls: str, o: JSON_TYPE) -> Any:  # noqa: PLW0211
         """
         Instanciate an object from its fields.
 
         This method is only called with supported instances that were
-        encoded with the help of :method:`fields`.
+        encoded with the help of :meth:`fields`.
 
         Parameters
         ----------
@@ -550,7 +550,7 @@ class std_hook(JSONHook):
         return None
 
     @staticmethod
-    def from_json(cls: str, o: JSON_TYPE) -> Any:
+    def from_json(cls: str, o: JSON_TYPE) -> Any:  # noqa: PLW0211
         """Decode an object."""
         o = cast(str, o)
         return datetime.fromisoformat(o)

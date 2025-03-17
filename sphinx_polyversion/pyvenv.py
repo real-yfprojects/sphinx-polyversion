@@ -99,6 +99,9 @@ class VirtualPythonEnvironment(Environment):
         The path of the python venv.
     creator : Callable[[Path], Any], optional
         A callable for creating the venv, by default None
+    env  : dict[str, str], optional
+        A dictionary of environment variables which are overridden in the
+        virtual environment, by default None
 
     Attributes
     ----------
@@ -108,6 +111,8 @@ class VirtualPythonEnvironment(Environment):
         The name of the environment.
     venv : Path
         The path of the python venv.
+    env  : dict
+        The user-specified environment variables for the virtual environment.
 
     """
 
@@ -118,6 +123,7 @@ class VirtualPythonEnvironment(Environment):
         venv: str | Path,
         *,
         creator: Callable[[Path], Any] | None = None,
+        env: dict[str, str] | None = None,
     ):
         """
         Environment for building inside a python virtual environment.
@@ -132,11 +138,15 @@ class VirtualPythonEnvironment(Environment):
             The path of the python venv.
         creator : Callable[[Path], Any], optional
             A callable for creating the venv, by default None
+        env  : dict[str, str], optional
+            A dictionary of environment variables which are forwarded to the
+            virtual environment, by default None
 
         """
         super().__init__(path, name)
         self.venv = Path(venv).resolve()
         self._creator = creator
+        self.env = env or {}
 
     async def create_venv(self) -> None:
         """
@@ -175,9 +185,59 @@ class VirtualPythonEnvironment(Environment):
         dict[str, str]
             The dictionary that was passed with `env`.
 
+        Raises
+        ------
+        FileNotFoundError
+            If no environment is located at the location `venv`.
+
         """
+        if not self.venv.exists():
+            raise FileNotFoundError(
+                f"""There is no virtual environment at the path {self.venv}.
+                Please ensure that the path points to an existing virtual environment, or
+                supply a creator to automatically create the environment."""
+            )
         env["VIRTUAL_ENV"] = str(self.venv)
         env["PATH"] = str(self.venv / "bin") + ":" + env["PATH"]
+        return env
+
+    def apply_overrides(self, env: dict[str, str]) -> dict[str, str]:
+        """
+        Prepare the environment for the build.
+
+        This method is used to modify the environment before running a
+        build command. It :py:meth:`activates <activate>` the python venv
+        and overrides those environment variables that were passed to the
+        :py:class:`constructor <VirtualPythonEnvironment>`.
+        `PATH` is never replaced but extended instead.
+
+        .. warning:: This modifies the given dictionary in-place.
+
+        Parameters
+        ----------
+        env : dict[str, str]
+            The environment to modify.
+
+        Returns
+        -------
+        dict[str, str]
+            The updated environment.
+
+        """
+        # add user-supplied values to env
+        for key, value in self.env.items():
+            if key == "PATH":
+                # extend PATH instead of replacing
+                env["PATH"] = value + ":" + env["PATH"]
+                continue
+            if key in env:
+                logger.info(
+                    "Overwriting environment variable %s=%s with user-specified value '%s'.",
+                    key,
+                    env[key],
+                    value,
+                )
+            env[key] = value
         return env
 
     async def run(
@@ -188,8 +248,9 @@ class VirtualPythonEnvironment(Environment):
 
         This implementation passes the arguments to
         :func:`asyncio.create_subprocess_exec`. But alters `env` to
-        activate the correct python venv. If a python venv is already activated
-        this activation is overridden.
+        :py:meth:`activates <activate>` the correct python
+        and overrides the use-specified vars using :py:meth:`prepare_env`.
+        If a python venv is already activated this activation is overridden.
 
         Returns
         -------
@@ -202,7 +263,9 @@ class VirtualPythonEnvironment(Environment):
 
         """
         # activate venv
-        kwargs["env"] = self.activate(kwargs.get("env", os.environ).copy())
+        kwargs["env"] = self.activate(
+            self.apply_overrides(kwargs.get("env", os.environ).copy())
+        )
         return await super().run(*cmd, **kwargs)
 
 
@@ -221,10 +284,20 @@ class Poetry(VirtualPythonEnvironment):
         The name of the environment (usually the name of the revision).
     args : Iterable[str]
         The cmd arguments to pass to `poetry install`.
+    env  : dict[str, str], optional
+        A dictionary of environment variables which are overidden in the
+        virtual environment, by default None
 
     """
 
-    def __init__(self, path: Path, name: str, *, args: Iterable[str]):
+    def __init__(
+        self,
+        path: Path,
+        name: str,
+        *,
+        args: Iterable[str],
+        env: dict[str, str] | None = None,
+    ):
         """
         Build Environment for isolated builds using poetry.
 
@@ -236,12 +309,16 @@ class Poetry(VirtualPythonEnvironment):
             The name of the environment (usually the name of the revision).
         args : Iterable[str]
             The cmd arguments to pass to `poetry install`.
+        env  : dict[str, str], optional
+            A dictionary of environment variables which are forwarded to the
+            virtual environment, by default None
 
         """
         super().__init__(
             path,
             name,
             path / ".venv",  # placeholder, determined later
+            env=env,
         )
         self.args = args
 
@@ -262,6 +339,8 @@ class Poetry(VirtualPythonEnvironment):
         cmd += self.args
 
         env = os.environ.copy()
+        self.apply_overrides(env)
+
         env.pop("VIRTUAL_ENV", None)  # unset poetry env
         env["POETRY_VIRTUALENVS_IN_PROJECT"] = "False"
         venv_path = self.path / ".venv"
@@ -333,6 +412,13 @@ class Pip(VirtualPythonEnvironment):
         The cmd arguments to pass to `pip install`.
     creator : Callable[[Path], Any] | None, optional
         A callable for creating the venv, by default None
+    temporary   : bool, optional
+        A flag to specify whether the environment should be created in the
+        temporary directory, by default False. If this is True, `creator`
+        must not be None and `venv` will be treated relative to `path`.
+    env  : dict[str, str], optional
+        A dictionary of environment variables which are overridden in the
+        virtual environment, by default None
 
     """
 
@@ -344,6 +430,8 @@ class Pip(VirtualPythonEnvironment):
         *,
         args: Iterable[str],
         creator: Callable[[Path], Any] | None = None,
+        temporary: bool = False,
+        env: dict[str, str] | None = None,
     ):
         """
         Build Environment for using a venv and pip.
@@ -360,9 +448,30 @@ class Pip(VirtualPythonEnvironment):
             The cmd arguments to pass to `pip install`.
         creator : Callable[[Path], Any], optional
             A callable for creating the venv, by default None
+        temporary   : bool, optional
+            A flag to specify whether the environment should be created in the
+            temporary directory, by default False. If this is True, `creator`
+            must not be None and `venv` will be treated relative to `path`.
+        env  : dict[str, str], optional
+            A dictionary of environment variables which are overridden in the
+            virtual environment, by default None
+
+        Raises
+        ------
+        ValueError
+            If `temporary` is enabled but no valid creator is provided.
 
         """
-        super().__init__(path, name, venv, creator=creator)
+        if temporary:
+            if creator is None:
+                raise ValueError(
+                    "Cannot create temporary virtual environment when creator is None.\n"
+                    "Please set creator to enable temporary virtual environments, or "
+                    "set temporary to False to use a pre-existing local environment "
+                    f"at path '{venv}'."
+                )
+            venv = path / venv
+        super().__init__(path, name, venv, creator=creator, env=env)
         self.args = args
 
     async def __aenter__(self) -> Self:
@@ -385,7 +494,7 @@ class Pip(VirtualPythonEnvironment):
         process = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=self.path,
-            env=self.activate(os.environ.copy()),
+            env=self.activate(self.apply_overrides(os.environ.copy())),
             stdout=PIPE,
             stderr=PIPE,
         )

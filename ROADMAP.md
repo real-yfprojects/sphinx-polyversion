@@ -72,10 +72,11 @@
     - [ ] Updating docs from old versions using cherry-pick
   - [ ] Subclassing guide
   - [ ] Reference
+    - [ ] Further explanation accompanying the reference (for new contributors) and users who want to extend inside `poly.py`
     - [ ] Command line syntax
-    - [ ] API
-    - [ ] Abstract classes
-    - [ ] Implementations
+    - [x] API
+    - [x] Abstract classes
+    - [x] Implementations
 - [ ] Contributing Standards
   - [ ] Contributing
   - [ ] Workflows, Policies

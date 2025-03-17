@@ -78,7 +78,7 @@ def no_git_env(_env: Mapping[str, str] | None = None) -> dict[str, str]:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def git_testrepo(tmp_path: Path) -> Tuple[Path, List[GitRef]]:
     """Create a git repository for testing."""
     git = ("git", *NO_FS_MONITOR)
@@ -162,13 +162,13 @@ def git_testrepo(tmp_path: Path) -> Tuple[Path, List[GitRef]]:
     return tmp_path, refs
 
 
-@pytest.fixture()
+@pytest.fixture
 def git() -> Git:
     """Create a `Git` instance for testing."""
     return Git(branch_regex=".*", tag_regex=".*")
 
 
-@pytest.fixture()
+@pytest.fixture
 def git_with_predicate() -> Git:
     """Create a `Git` instance with a predicate for testing."""
 
@@ -182,13 +182,13 @@ def git_with_predicate() -> Git:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def git_with_buffer_size() -> Git:
     """Create a `Git` instance with a buffer size for testing."""
     return Git(branch_regex=".*", tag_regex=".*", buffer_size=1024)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aroot(git: Git, git_testrepo: Tuple[Path, List[GitRef]]):
     """Test the `aroot` method."""
     repo_path, _ = git_testrepo
@@ -199,7 +199,7 @@ async def test_aroot(git: Git, git_testrepo: Tuple[Path, List[GitRef]]):
     assert root == repo_path
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_checkout(
     git: Git,
     git_testrepo: Tuple[Path, List[GitRef]],
@@ -211,7 +211,7 @@ async def test_checkout(
     assert (tmp_path / "test.txt").read_text() == "test"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_checkout_with_buffer(
     git_with_buffer_size: Git,
     git_testrepo: Tuple[Path, List[GitRef]],
@@ -223,7 +223,7 @@ async def test_checkout_with_buffer(
     assert (tmp_path / "test.txt").read_text() == "test"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_predicate(git_with_predicate: Git):
     """Test the `predicate` method."""
     root = "."
@@ -248,7 +248,7 @@ def compare_refs(ref1: GitRef, ref2: GitRef) -> bool:
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_retrieve(git: Git, git_testrepo: Tuple[Path, List[GitRef]]):
     """Test the `retrieve` method."""
     root, git_refs = git_testrepo
@@ -259,7 +259,7 @@ async def test_retrieve(git: Git, git_testrepo: Tuple[Path, List[GitRef]]):
         assert compare_refs(ref1, ref2)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_retrieve_with_predicate(
     git_with_predicate: Git, git_testrepo: Tuple[Path, List[GitRef]]
 ):
@@ -271,7 +271,7 @@ async def test_retrieve_with_predicate(
     assert compare_refs(refs[1], git_refs[3])
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_closest_tag(git_testrepo: Tuple[Path, List[GitRef]]):
     """Test the `closest_tag` method."""
     root, git_refs = git_testrepo
@@ -296,7 +296,7 @@ async def test_closest_tag(git_testrepo: Tuple[Path, List[GitRef]]):
     assert await closest_tag(root, git_refs[0], ["1.0", "2.0"]) is None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_file_exists(git_testrepo: Tuple[Path, List[GitRef]]):
     """Test the `file_exists` method."""
     root, git_refs = git_testrepo
@@ -313,7 +313,7 @@ async def test_file_exists(git_testrepo: Tuple[Path, List[GitRef]]):
     assert not await file_exists(root, git_refs[1], Path("dir3"))
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_file_predicate(git_testrepo: Tuple[Path, List[GitRef]]):
     """Test the `file_exists` method."""
     root, git_refs = git_testrepo

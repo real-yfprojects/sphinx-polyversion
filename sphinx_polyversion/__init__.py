@@ -15,12 +15,12 @@ from sphinx_polyversion.driver import DefaultDriver
 from sphinx_polyversion.json import GLOBAL_DECODER, GLOBAL_ENCODER
 
 __all__ = (
+    "GLOBAL_DECODER",
+    "GLOBAL_ENCODER",
+    "DefaultDriver",
     "apply_overrides",
     "load",
     "order_versions",
-    "DefaultDriver",
-    "GLOBAL_DECODER",
-    "GLOBAL_ENCODER",
 )
 
 logger = getLogger(__name__)

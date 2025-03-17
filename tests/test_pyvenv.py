@@ -14,7 +14,7 @@ from sphinx_polyversion.pyvenv import (
 )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_venv_creation(tmp_path: Path):
     """Test the creation of a python virtual environment."""
     location = tmp_path / "venv"
@@ -23,7 +23,7 @@ async def test_venv_creation(tmp_path: Path):
     assert (location / "bin" / "python").exists()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_virtualvenv_creation(tmp_path: Path):
     """Test the creation of a python virtual environment."""
     pytest.importorskip("virtualenv")
@@ -37,7 +37,7 @@ async def test_virtualvenv_creation(tmp_path: Path):
 class TestVirtualPythonEnvionment:
     """Test the `VirtualPythonEnvironment` class."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_creation_with_venv(self, tmp_path: Path):
         """Test the `create_venv` method with a `VenvWrapper`."""
         location = tmp_path / "venv"
@@ -48,7 +48,7 @@ class TestVirtualPythonEnvionment:
         await env.create_venv()
         assert (location / "bin" / "python").exists()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_creation_without_creator(self, tmp_path: Path):
         """Test the `create_venv` method without any creator."""
         location = tmp_path / "venv"
@@ -57,7 +57,21 @@ class TestVirtualPythonEnvionment:
         await env.create_venv()
         assert not (location / "bin" / "python").exists()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
+    async def test_run_without_creator_no_existing(self, tmp_path: Path):
+        """Test running a command without an existing venv and without creator."""
+        location = tmp_path / "novenv"
+
+        async with VirtualPythonEnvironment(tmp_path, "main", location) as env:
+            with pytest.raises(FileNotFoundError, match="There is no virtual"):
+                out, err, rc = await env.run(
+                    "python",
+                    "-c",
+                    "import sys; print(sys.prefix)",
+                    stdout=asyncio.subprocess.PIPE,
+                )
+
+    @pytest.mark.asyncio
     async def test_run_without_creator(self, tmp_path: Path):
         """Test running a command in an existing venv."""
         location = tmp_path / "venv"
@@ -75,7 +89,7 @@ class TestVirtualPythonEnvionment:
             assert rc == 0
             assert str(location) == out.strip()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_run_with_creator(self, tmp_path: Path):
         """Test running a command in a new venv."""
         location = tmp_path / "venv"
@@ -92,11 +106,144 @@ class TestVirtualPythonEnvionment:
             assert rc == 0
             assert str(location) == out.strip()
 
+    @pytest.mark.asyncio
+    async def test_run_with_env_variables(self, tmp_path: Path):
+        """Test passing an environment variable to a venv."""
+        location = tmp_path / "venv"
+
+        async with VirtualPythonEnvironment(
+            tmp_path, "main", location, creator=VenvWrapper(), env={"TESTVAR": "1"}
+        ) as env:
+            out, err, rc = await env.run(
+                "python",
+                "-c",
+                "import os; print(os.environ['TESTVAR'])",
+                stdout=asyncio.subprocess.PIPE,
+            )
+            assert rc == 0
+            assert out.strip() == "1"
+
 
 class TestPip:
     """Test the `Pip` class."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
+    async def test_creation_with_venv(self, tmp_path: Path):
+        """Test the `create_venv` method with a `VenvWrapper`."""
+        location = tmp_path / "venv"
+        env = Pip(
+            tmp_path,
+            "main",
+            location,
+            args=["tomli"],
+            creator=VenvWrapper(),
+            temporary=False,
+        )
+
+        await env.create_venv()
+        assert (location / "bin" / "python").exists()
+
+    @pytest.mark.asyncio
+    async def test_creation_without_creator(self, tmp_path: Path):
+        """Test the `create_venv` method without any creator."""
+        location = tmp_path / "venv"
+        env = Pip(tmp_path, "main", location, args=["tomli"], temporary=False)
+
+        await env.create_venv()
+        assert not (location / "bin" / "python").exists()
+
+    @pytest.mark.asyncio
+    async def test_run_without_creator(self, tmp_path: Path):
+        """Test running a command in an existing venv."""
+        location = tmp_path / "venv"
+
+        # create env
+        await VenvWrapper([])(location)
+
+        async with Pip(
+            tmp_path, "main", location, args=["tomli"], temporary=False
+        ) as env:
+            out, err, rc = await env.run(
+                "python",
+                "-c",
+                "import sys; print(sys.prefix)",
+                stdout=asyncio.subprocess.PIPE,
+            )
+            assert rc == 0
+            assert str(location) == out.strip()
+
+    @pytest.mark.asyncio
+    async def test_run_with_creator(self, tmp_path: Path):
+        """Test running a command in a new venv."""
+        location = tmp_path / "venv"
+
+        async with Pip(
+            tmp_path,
+            "main",
+            location,
+            args=["tomli"],
+            creator=VenvWrapper(),
+            temporary=False,
+        ) as env:
+            out, err, rc = await env.run(
+                "python",
+                "-c",
+                "import sys; print(sys.prefix)",
+                stdout=asyncio.subprocess.PIPE,
+            )
+            assert rc == 0
+            assert str(location) == out.strip()
+
+    @pytest.mark.asyncio
+    async def test_creation_with_venv_temporary(self, tmp_path: Path):
+        """Test the `create_venv` method with a `VenvWrapper`."""
+        location = "tmpvenv"
+        env = Pip(
+            tmp_path,
+            "main",
+            location,
+            args=["tomli"],
+            creator=VenvWrapper(),
+            temporary=True,
+        )
+
+        await env.create_venv()
+        assert (tmp_path / location / "bin" / "python").exists()
+
+    @pytest.mark.asyncio
+    async def test_creation_without_creator_temporary(self, tmp_path: Path):
+        """Test the `create_venv` method without any creator."""
+        location = "tmpvenv"
+        with pytest.raises(
+            ValueError,
+            match="Cannot create temporary virtual environment when creator is None",
+        ):
+            Pip(tmp_path, "main", location, args=["tomli"], temporary=True)
+
+    @pytest.mark.asyncio
+    async def test_run_with_creator_temporary(self, tmp_path: Path):
+        """Test running a command in a new venv."""
+        location = "tmpvenv"
+
+        async with Pip(
+            tmp_path,
+            "main",
+            location,
+            args=["tomli"],
+            creator=VenvWrapper(),
+            temporary=True,
+        ) as env:
+            out, err, rc = await env.run(
+                "python",
+                "-c",
+                "import sys; print(sys.prefix)",
+                stdout=asyncio.subprocess.PIPE,
+            )
+            assert rc == 0
+            assert str(tmp_path / location) == out.strip()
+
+    @pytest.mark.asyncio
     async def test_install_into_existing_venv(self, tmp_path: Path):
         """Test installing a package into an existing venv."""
         location = tmp_path / "venv"
@@ -125,15 +272,47 @@ class TestPip:
             )
             assert rc == 0
 
+    @pytest.mark.asyncio
+    async def test_run_with_env_variables(self, tmp_path: Path):
+        """Test passing an environment variable to a venv."""
+        location = tmp_path / "venv"
+
+        # create env
+        await VenvWrapper(with_pip=True)(location)
+
+        # test that tomli is not installed
+        proc = await asyncio.create_subprocess_exec(
+            str(location / "bin/python"),
+            "-c",
+            "import tomli",
+            stdout=asyncio.subprocess.PIPE,
+        )
+        rc = await proc.wait()
+        assert rc == 1
+
+        # init env with tomli
+        async with Pip(
+            tmp_path, "main", location, args=["tomli"], env={"TESTVAR": "1"}
+        ) as env:
+            # test that tomli is installed
+            out, err, rc = await env.run(
+                "python",
+                "-c",
+                "import os; print(os.environ['TESTVAR'])",
+                stdout=asyncio.subprocess.PIPE,
+            )
+            assert rc == 0
+            assert out.strip() == "1"
+
 
 class TestPoetry:
     """Test the `Poetry` environment."""
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_simple_project(self, tmp_path: Path):
         """Test installing a simple project with poetry."""
         # create source files
-        src_location = tmp_path / "src"
+        src_location = tmp_path / "test"
         src_location.mkdir()
         src_location.joinpath("__init__.py").touch()
 
@@ -155,7 +334,7 @@ class TestPoetry:
         )
 
         # create poetry env
-        async with Poetry(tmp_path, "main", args=[]) as env:
+        async with Poetry(tmp_path, "main", args=[], env={"TESTVAR": "1"}) as env:
             # check sourcing works
             out, err, rc = await env.run(
                 "python",
@@ -184,11 +363,21 @@ class TestPoetry:
             )
             assert rc == 0
 
-    @pytest.mark.asyncio()
+            # test that custom environment variables are passed correctly
+            out, err, rc = await env.run(
+                "python",
+                "-c",
+                "import os; print(os.environ['TESTVAR'])",
+                stdout=asyncio.subprocess.PIPE,
+            )
+            assert rc == 0
+            assert out.strip() == "1"
+
+    @pytest.mark.asyncio
     async def test_simple_project_with_optional_deps(self, tmp_path: Path):
         """Test installing a simple project with poetry."""
         # create source files
-        src_location = tmp_path / "src"
+        src_location = tmp_path / "test"
         src_location.mkdir()
         src_location.joinpath("__init__.py").touch()
 
@@ -274,11 +463,11 @@ class TestPoetry:
             )
             assert rc == 0
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_create_two_concurrently(self, tmp_path: Path):
         """Test creating two environments concurrently."""
         # create source files
-        src_location = tmp_path / "src"
+        src_location = tmp_path / "test"
         src_location.mkdir()
         src_location.joinpath("__init__.py").touch()
 

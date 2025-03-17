@@ -33,7 +33,7 @@ from sphinx_polyversion.json import GLOBAL_DECODER
 from sphinx_polyversion.utils import async_all
 from sphinx_polyversion.vcs import VersionProvider
 
-__all__ = ["GitRef", "GitRefType", "Git", "file_predicate", "refs_by_type"]
+__all__ = ["Git", "GitRef", "GitRefType", "file_predicate", "refs_by_type"]
 
 logger = getLogger(__name__)
 
@@ -521,7 +521,7 @@ class Git(VersionProvider[GitRef]):
         """
         Check whether a revision should be build.
 
-        This predicate is used by :method:`retrieve` to filter the
+        This predicate is used by :meth:`retrieve` to filter the
         git references retrieved.
 
         Parameters
