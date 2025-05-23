@@ -301,7 +301,7 @@ to :code:`DefaultDriver`.
 
     def root_data(driver: DefaultDriver):
         revisions = driver.builds
-        tags, branches  = refs_by_type(revisions)
+        branches, tags  = refs_by_type(revisions)
         latest = max(tags or branches)
         return {"revisions": revisions, "latest": latest}
 
