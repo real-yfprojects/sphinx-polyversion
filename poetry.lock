@@ -1148,6 +1148,24 @@ sphinx = ">=4.0"
 docs = ["furo", "ipython", "myst-parser", "sphinx-copybutton", "sphinx-inline-tabs"]
 
 [[package]]
+name = "sphinx-codeautolink"
+version = "0.17.4"
+description = "Automatic links from code examples to reference documentation."
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "sphinx_codeautolink-0.17.4-py3-none-any.whl", hash = "sha256:602d94379c1a87141deedce66c17bc52a7f9c5f78a62b9c3ea94d103d6b32c21"},
+    {file = "sphinx_codeautolink-0.17.4.tar.gz", hash = "sha256:44afd4102a1f1517838822f3ddc09d89aade642bb04302d749bb48adc3f2057e"},
+]
+
+[package.dependencies]
+beautifulsoup4 = ">=4.8.1"
+sphinx = ">=3.2.0"
+
+[package.extras]
+ipython = ["ipython (!=8.7.0)"]
+
+[[package]]
 name = "sphinx-copybutton"
 version = "0.5.2"
 description = "Add a copy button to each of your code cells."
@@ -1660,4 +1678,4 @@ virtualenv = ["virtualenv"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8"
-content-hash = "9e4be5e5bdb6f3cc24e0fa9b49844b3036945d5734a32496a205c909fec77d5d"
+content-hash = "0e801455b031d9fd254dd6856b2f991980c35b3bbf4b3f8dc6e2d0a9d75d99eb"

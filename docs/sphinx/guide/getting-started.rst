@@ -75,6 +75,8 @@ be overridden from the commandline before being used to build the documentation.
 This is a major feature of `sphinx-polyversion` which will be explained in this
 section and :ref:`further down this guide<Overriding config options>`.
 
+.. autolink-concat:: section
+
 .. code-block:: py
     :caption: `docs/poly.py` - imports and config variables
     :linenos:
@@ -204,6 +206,10 @@ though.
 
 .. TODO: link docs for data format
 
+.. autolink-preface::
+
+   from sphinx_polyversion.git import GitRef
+
 .. code-block:: py
     :caption: default data exposed to sphinx docs
 
@@ -290,7 +296,12 @@ know which tag represents the latest revision. First you have to implement
 :code:`root_data` (see below) and then pass :code:`root_data_factory=root_data`
 to :code:`DefaultDriver`.
 
+.. TODO mention that max sorts by creation date
 .. TODO link reference
+
+.. autolink-preface::
+
+   from sphinx_polyversion import *
 
 .. code-block:: py
     :caption: `docs/poly.py` - calculate and expose latest revision
