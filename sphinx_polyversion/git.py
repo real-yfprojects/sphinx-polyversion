@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import enum
 import re
-import subprocess
 import tarfile
 import tempfile
 from asyncio.subprocess import PIPE
@@ -26,7 +25,6 @@ from typing import (
     NamedTuple,
     Tuple,
     TypeVar,
-    cast,
 )
 
 from sphinx_polyversion.json import GLOBAL_DECODER
@@ -111,14 +109,41 @@ def get_current_commit(repo: Path) -> str:
         The hex obj hash of the commit.
 
     """
+    return asyncio.run(_resolve_ref(repo, "HEAD"))
+
+
+async def _resolve_ref(repo: Path, ref: str) -> str:
+    """
+    Resolve a git ref to its commit hash.
+
+    Parameters
+    ----------
+    repo : Path
+        The git repository.
+    ref : str
+        The ref to resolve.
+
+    Returns
+    -------
+    str
+        The hex obj hash of the commit.
+
+    Raises
+    ------
+    CalledProcessError
+        The git process exited with an error.
+
+    """
     cmd = (
         "git",
         "rev-parse",
-        "HEAD",
+        f"{ref}^{{commit}}",
     )
-
-    process = subprocess.run(cmd, stdout=PIPE, cwd=repo, check=True)
-    return process.stdout.decode().rstrip("\n")
+    process = await asyncio.create_subprocess_exec(*cmd, stdout=PIPE, cwd=repo)
+    out, err = await process.communicate()
+    if process.returncode:
+        raise CalledProcessError(process.returncode, " ".join(cmd), stderr=err)
+    return out.decode().rstrip("\n")
 
 
 async def _get_all_refs(
@@ -158,22 +183,6 @@ async def _get_all_refs(
         ref = _parse_ref(line)
         if ref is not None:
             yield ref
-
-
-async def _is_ancestor(repo: Path, ancestor: str, descendant: str) -> bool:
-    cmd = (
-        "git",
-        "merge-base",
-        "--is-ancestor",
-        ancestor,
-        descendant,
-    )
-    process = await asyncio.create_subprocess_exec(*cmd, stdout=PIPE, cwd=repo)
-    out, err = await process.communicate()
-    rc = cast(int, process.returncode)
-    if rc > 1:
-        raise CalledProcessError(rc, " ".join(cmd), stderr=err)
-    return rc == 0
 
 
 async def _copy_tree(
@@ -255,7 +264,7 @@ async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
 
 async def closest_tag(root: Path, ref: GitRef, tags: tuple[str]) -> str | None:
     """
-    Find the closest ancestor to a given ref.
+    Find the closest ancestor of a given ref from a list of tags.
 
     Parameters
     ----------
@@ -272,9 +281,28 @@ async def closest_tag(root: Path, ref: GitRef, tags: tuple[str]) -> str | None:
         The closest ancestor or None if no ancestor was found.
 
     """
-    for tag in reversed(tags):
-        if await _is_ancestor(root, tag, ref.obj):
-            return tag
+    # determine commit hashes for each tag
+    hash_to_tag = {await _resolve_ref(root, tag): tag for tag in tags}
+
+    # iterate over ancestors until one is in `tags`
+    cmd = (
+        "git",
+        "rev-list",
+        "--full-history",
+        "--sparse",
+        ref.obj,
+    )
+    process = await asyncio.create_subprocess_exec(*cmd, stdout=PIPE, cwd=root)
+    while h := await process.stdout.readline():  # type: ignore[union-attr]
+        h = h.strip().decode()
+        if h in hash_to_tag:
+            process.terminate()
+            await process.wait()
+            return hash_to_tag[h]
+
+    await process.wait()
+    if process.returncode:
+        raise CalledProcessError(process.returncode, " ".join(cmd))
     return None
 
 
