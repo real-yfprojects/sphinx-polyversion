@@ -4,16 +4,13 @@ Installation
 
 This tool can be installed as a os-independent python package. You will therefore
 need a Python installation and a python package manager like *pip*.
-Sphinx-polyversion is available on pypi.org. But you can also install the package
+Sphinx-polyversion is available on `PyPI <https://pypi.org/project/sphinx_polyversion/>`_. But you can also install the package
 directly from its git repository.
 
-.. TODO: link pypi
-
 Sphinx-polyversion provides integration with virtualenv and jinja. By specifying
-the respective dependency groups you can install them alongside the tool.
+the respective dependency groups (see `Python extras <https://packaging.python.org/en/latest/specifications/dependency-specifiers/#extras>`_) you can install them alongside the tool.
 
 .. TODO: link to pages explaining jinja and virtualenv integration
-.. TODO: link article about dependency groups
 
 .. tab-set::
 

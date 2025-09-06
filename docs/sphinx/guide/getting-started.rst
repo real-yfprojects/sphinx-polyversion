@@ -23,7 +23,7 @@ With `sphinx-polyversion` everything revolves around its configuration file
 which is a python script conventionally named `poly.py`.
 This configuration file will be executed when calling `sphinx-polyversion`.
 This tool is designed in such a way that `poly.py` does all the heavy lifting.
-In fact there is no need to run :code:`sphinx-polyversion` from the commandline.
+In fact there is no need to run :ref:`sphinx-polyversion <cmdline>` from the commandline.
 Instead you can execute `poly.py` directly to build your documentation.
 However the `sphinx_polyversion`
 python package provides the underlying logic as well as helpful utilities.
@@ -51,9 +51,8 @@ you define and how you name them.
     The output directory must always be called :code:`OUTPUT_DIR`.
     The flag to use the local version and mock data must be called :code:`MOCK`.
     The flag to use sequential builds must be called :code:`SEQUENTIAL`.
-    Finally, you have to pass :code:`MOCK` and :code:`SEQUENTIAL` to :code:`DefaultDriver.run`.
-
-.. TODO link reference
+    Finally, you have to pass :code:`MOCK` and :code:`SEQUENTIAL` to
+    :meth:`DefaultDriver.run <sphinx_polyversion.driver.DefaultDriver.run>`.
 
 .. note::
 
@@ -66,7 +65,6 @@ you define and how you name them.
     types. If you have an idea how to design a system
     that follows the philosophy of this project please open a discussion on github.
 
-.. TODO: link override section
 .. TODO link philosophy and discussions
 
 Defining the options as variables at the beginning not only makes
@@ -127,7 +125,8 @@ section and :ref:`further down this guide<Overriding config options>`.
     SEQUENTIAL = False
 
 Next you add the code handling the overrides read from the commandline.
-This is straightforward since `sphinx-polyversion` provides the function :code:`apply_overrides` that
+This is straightforward since `sphinx-polyversion` provides the function
+:meth:`~sphinx_polyversion.api.apply_overrides` that
 takes care of that. It parses the commandline arguments and overrides
 the config variables with the given values. For that you need to pass
 the :code:`globals()` dictionary to the function.
@@ -151,15 +150,15 @@ It makes sense to use the method provided since
 you might call the script from arbitrary locations. The root will be used
 for determining the locations of the template, source and static directories.
 
-After that you initialize the :code:`DefaultDriver` class using the config options
-you defined earlier. The driver uses the passed :code:`vcs` object to determine which
+After that you initialize the :class:`~sphinx_polyversion.driver.DefaultDriver`
+class using the config options you defined earlier.
+The driver uses the passed :code:`vcs` object to determine which
 versions to build. It will proceed with running the :code:`builder` object
 in the :code:`env` environment. In this case :code:`sphinx-build` is run in a python
 virtual environment created with *poetry* for each version. This means that each
 version is build in an isolated environment with the dependencies defined
 in its revision.
 
-.. TODO link reference
 .. TODO link poetry
 
 .. code-block:: py
@@ -294,7 +293,7 @@ You will have to add some lines to `poly.py` since the template requires
 a `latest` field that isn't provided by default since `sphinx-polyversion` can't
 know which tag represents the latest revision. First you have to implement
 :code:`root_data` (see below) and then pass :code:`root_data_factory=root_data`
-to :code:`DefaultDriver`.
+to :class:`~sphinx_polyversion.driver.DefaultDriver`.
 
 .. TODO mention that max sorts by creation date
 .. TODO link reference
@@ -326,6 +325,14 @@ build your versioned documentation. All versions configured in `poly.py` will
 be build. However if you want to test local changes you can use the :code:`-l`
 flag to build a documentation from the files in the local filesystem. When passing
 this flag all other versions are not build.
+
+.. note::
+
+    When using the :class:`~sphinx_polyversion.git.Git` as a
+    :class:`~sphinx_polyversion.vcs.VersionProvider` building
+    locally will ignore those files that `git` also ignores.
+
+.. _cmdline:
 
 .. argparse::
     :ref: sphinx_polyversion.main.get_parser

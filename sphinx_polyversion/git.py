@@ -552,6 +552,9 @@ class Git(VersionProvider[GitRef]):
         """
         Create copy of the local working directory at the given path.
 
+        This doesn't copy files ignored by `git` if possible.
+        Otherwise all files are copied as a fallback.
+
         Parameters
         ----------
         root : Path
