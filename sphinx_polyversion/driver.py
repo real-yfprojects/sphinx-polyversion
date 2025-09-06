@@ -334,7 +334,7 @@ class Driver(Generic[RT, ENV], metaclass=ABCMeta):
             path = Path(tmp)
             # copy source files
             logger.info("Copying source files...")
-            shutil.copytree(self.root, path, symlinks=True, dirs_exist_ok=True)
+            await self.vcs.checkout_local(self.root, path)
             # setup build environment (e.g. poetry/pip venv)
             async with await self.init_environment(path, rev) as env:
                 # construct metadata to pass to the build process
