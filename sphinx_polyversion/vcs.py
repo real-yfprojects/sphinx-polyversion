@@ -49,6 +49,20 @@ class VersionProvider(Protocol[RT]):
         """
 
     @abstractmethod
+    async def checkout_local(self, root: Path, dest: Path) -> None:
+        """
+        Create copy of the local working directory at the given path.
+
+        Parameters
+        ----------
+        root : Path
+            The root path of the project.
+        dest : Path
+            The destination to extract the revision to.
+
+        """
+
+    @abstractmethod
     async def retrieve(self, root: Path) -> Iterable[RT]:
         """
         List all build targets.

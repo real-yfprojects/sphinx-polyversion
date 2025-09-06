@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import enum
 import re
+import shutil
 import tarfile
 import tempfile
 from asyncio.subprocess import PIPE
@@ -210,6 +211,7 @@ async def _copy_tree(
 
     """
     # retrieve commit contents as tar archive
+    # NOTE: doesn't support git submodules
     cmd = ("git", "archive", "--format", "tar", ref)
     with tempfile.SpooledTemporaryFile(max_size=buffer_size) as f:
         process = await asyncio.create_subprocess_exec(
@@ -259,9 +261,11 @@ async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
     return rc == 0
 
 
-async def get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
+async def _get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
     """
     List all unignored files in the directory.
+
+    This uses git to retrieve
 
     Parameters
     ----------
@@ -282,9 +286,9 @@ async def get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
         "--exclude-standard",
     )
     process = await asyncio.create_subprocess_exec(*cmd, cwd=directory, stdout=PIPE)
-    out, err = await process.communicate()
-    for line in out.decode().splitlines():
-        yield Path(line.strip())
+    while line := await process.stdout.readline():  # type: ignore[union-attr]
+        yield Path(line.strip().decode())
+    await process.wait()
 
 
 # -- VersionProvider API -----------------------------------------------------
@@ -429,6 +433,10 @@ class Git(VersionProvider[GitRef]):
     """
     Provide versions from git repository.
 
+    .. warning::
+
+        Currently git submodules aren't supported. Feel free to open an issue!
+
     Parameters
     ----------
     branch_regex : str | re.Pattern
@@ -536,6 +544,32 @@ class Git(VersionProvider[GitRef]):
 
         """
         await _copy_tree(root, revision.obj, dest, self.buffer_size)
+
+    async def checkout_local(self, root: Path, dest: Path) -> None:
+        """
+        Create copy of the local working directory at the given path.
+
+        Parameters
+        ----------
+        root : Path
+            The root path of the project.
+        dest : Path
+            The destination to extract the revision to.
+
+        """
+        try:
+            # NOTE: doesn't support git submodules
+            async for file in _get_unignored_files(root):
+                source = root / file
+                target = dest / file
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if source.exists() and not target.exists():
+                    shutil.copy2(source, target, follow_symlinks=False)
+        except CalledProcessError:
+            logger.warning(
+                "Could not list un-ignored files using git. Copying full working directory..."
+            )
+            shutil.copytree(root, dest, symlinks=True, dirs_exist_ok=True)
 
     async def predicate(self, root: Path, ref: GitRef) -> bool:
         """
