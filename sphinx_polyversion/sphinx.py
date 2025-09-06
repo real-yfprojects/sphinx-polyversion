@@ -37,6 +37,13 @@ class CommandBuilder(Builder[Environment, None]):
     command provided. These placeholders will be replaced with their actual
     values before the subprocess is run.
 
+    .. tip::
+
+        To achieve more complex tasks like running multiple commands in sequence
+        or further processing the placeholder values, you can pass a command
+        invoking a custom script file which is the intended usage of
+        :paramref:`cmd`, :paramref:`pre_cmd` and :paramref:`post_cmd`.
+
     Parameters
     ----------
     source : PurePath
