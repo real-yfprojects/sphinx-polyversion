@@ -265,7 +265,8 @@ async def _get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
     """
     List all unignored files in the directory.
 
-    This uses git to retrieve
+    This uses git to retrieve all tracked and untracked files but excludes
+    files ignored e.g. by `.gitignore`.
 
     Parameters
     ----------
@@ -289,6 +290,8 @@ async def _get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
     while line := await process.stdout.readline():  # type: ignore[union-attr]
         yield Path(line.strip().decode())
     await process.wait()
+    if process.returncode:
+        raise CalledProcessError(process.returncode, " ".join(cmd))
 
 
 # -- VersionProvider API -----------------------------------------------------
@@ -563,8 +566,8 @@ class Git(VersionProvider[GitRef]):
                 source = root / file
                 target = dest / file
                 target.parent.mkdir(parents=True, exist_ok=True)
-                if source.exists() and not target.exists():
-                    shutil.copy2(source, target, follow_symlinks=False)
+                assert source.exists()
+                shutil.copy2(source, target, follow_symlinks=False)
         except CalledProcessError:
             logger.warning(
                 "Could not list un-ignored files using git. Copying full working directory..."
