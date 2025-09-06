@@ -9,6 +9,9 @@ changelog:
     - title: Patches 🩹
       labels:
         - patch
+    - title: Documentation 📝
+      labels:
+        - docs
     - title: Other Changes
       labels:
         - "*"
