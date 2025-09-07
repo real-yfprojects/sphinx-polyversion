@@ -75,7 +75,7 @@ from pathlib import Path
 from sphinx_polyversion.api import apply_overrides
 from sphinx_polyversion.driver import DefaultDriver
 from sphinx_polyversion.git import Git, file_predicate
-from sphinx_polyversion.pyvenv import Poetry
+from sphinx_polyversion.pyvenv import Poetry  # or use PipWithSetuptoolsScm for setuptools-scm support
 from sphinx_polyversion.sphinx import SphinxBuilder
 
 #: Regex matching the branches to build docs for
