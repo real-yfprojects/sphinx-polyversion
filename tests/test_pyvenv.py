@@ -570,14 +570,21 @@ class TestPoetry:
 class TestPipWithSetuptoolsScm:
     """Test the `PipWithSetuptoolsScm` environment."""
 
-    def test_env_variables_created_for_version_ref(self, tmp_path: Path):
-        """Test that setuptools-scm environment variables are created for version refs."""
-        # Test with version tag
+    def test_env_variables_created_with_version_tag(self, tmp_path: Path):
+        """Test that setuptools-scm environment variables are created for version tags."""
         env = PipWithSetuptoolsScm(
             tmp_path, "v1.2.3", "venv", args=["--no-deps"]
         )
         assert "SETUPTOOLS_SCM_PRETEND_VERSION" in env.env
         assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION"] == "1.2.3"
+
+    def test_env_variables_created_with_branch_name(self, tmp_path: Path):
+        """Test that environment variables are created for any reference name."""
+        env = PipWithSetuptoolsScm(
+            tmp_path, "main", "venv", args=["--no-deps"]
+        )
+        assert "SETUPTOOLS_SCM_PRETEND_VERSION" in env.env
+        assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION"] == "main"
 
     def test_env_variables_with_package_name(self, tmp_path: Path):
         """Test that package-specific environment variables are created."""
@@ -587,14 +594,13 @@ class TestPipWithSetuptoolsScm:
         assert "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MYPACKAGE" in env.env
         assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MYPACKAGE"] == "1.2.3"
 
-    def test_no_env_variables_for_non_version_ref(self, tmp_path: Path):
-        """Test that no environment variables are created for non-version refs."""
+    def test_explicit_version_override(self, tmp_path: Path):
+        """Test that explicit version parameter overrides name-based extraction."""
         env = PipWithSetuptoolsScm(
-            tmp_path, "main", "venv", args=["--no-deps"]
+            tmp_path, "main", "venv", args=["--no-deps"], version="2.0.0"
         )
-        # Should only have user-provided env vars, no setuptools-scm vars
-        scm_vars = [k for k in env.env.keys() if k.startswith("SETUPTOOLS_SCM_")]
-        assert len(scm_vars) == 0
+        assert "SETUPTOOLS_SCM_PRETEND_VERSION" in env.env
+        assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION"] == "2.0.0"
 
     def test_env_variables_merged_with_user_env(self, tmp_path: Path):
         """Test that setuptools-scm env vars are merged with user-provided env vars."""
@@ -611,13 +617,21 @@ class TestPipWithSetuptoolsScm:
         assert "SETUPTOOLS_SCM_PRETEND_VERSION" in env.env
         assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION"] == "1.2.3"
 
-    def test_complex_version_extraction(self, tmp_path: Path):
-        """Test that complex version strings are handled correctly."""
-        env = PipWithSetuptoolsScm(
-            tmp_path, "release-2.1.0-alpha1", "venv", args=["--no-deps"]
-        )
-        assert "SETUPTOOLS_SCM_PRETEND_VERSION" in env.env
-        assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION"] == "2.1.0-alpha1"
+    def test_prefix_removal(self, tmp_path: Path):
+        """Test that common prefixes are removed from reference names."""
+        test_cases = [
+            ("v1.2.3", "1.2.3"),
+            ("version-2.0.0", "2.0.0"),
+            ("release-1.5.0", "1.5.0"),
+            ("rel-0.9.0", "0.9.0"),
+            ("V3.0.0", "3.0.0"),  # Case insensitive
+        ]
+        
+        for ref_name, expected_version in test_cases:
+            env = PipWithSetuptoolsScm(
+                tmp_path, ref_name, "venv", args=["--no-deps"]
+            )
+            assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION"] == expected_version
 
     def test_package_name_normalization(self, tmp_path: Path):
         """Test that package names are properly normalized."""

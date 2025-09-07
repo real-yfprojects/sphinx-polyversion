@@ -22,7 +22,7 @@ from venv import EnvBuilder
 
 from sphinx_polyversion.builder import BuildError
 from sphinx_polyversion.environment import Environment
-from sphinx_polyversion.setuptools_scm_support import create_setuptools_scm_env
+
 from sphinx_polyversion.utils import to_thread
 
 if TYPE_CHECKING:
@@ -592,12 +592,11 @@ class PipWithSetuptoolsScm(Pip):
     """
     Build Environment for using a venv and installing deps with pip, with setuptools-scm support.
 
-    This class extends the regular Pip environment to provide automatic setuptools-scm
-    compatibility by setting appropriate environment variables when the revision name
-    looks like a version tag.
+    This class extends the regular Pip environment to provide setuptools-scm compatibility
+    by setting the SETUPTOOLS_SCM_PRETEND_VERSION environment variable.
 
-    Use this instead of the regular Pip class when building projects that use setuptools-scm
-    for version detection.
+    This is useful when building projects that use setuptools-scm for version detection,
+    as sphinx-polyversion copies files without the .git directory.
 
     Parameters
     ----------
@@ -618,9 +617,13 @@ class PipWithSetuptoolsScm(Pip):
     env  : dict[str, str], optional
         A dictionary of environment variables which are overridden in the
         virtual environment, by default None
+    version : str | None, optional
+        The version to use for setuptools-scm. If None, will attempt to extract
+        version from the revision name by removing common prefixes like 'v'.
     package_name : str | None, optional
         The package name for setuptools-scm. If provided, will use package-specific
-        environment variable. If None, uses generic fallback.
+        environment variable SETUPTOOLS_SCM_PRETEND_VERSION_FOR_{PACKAGE_NAME}.
+        If None, uses the generic SETUPTOOLS_SCM_PRETEND_VERSION.
 
     """
 
@@ -634,6 +637,7 @@ class PipWithSetuptoolsScm(Pip):
         creator: Callable[[Path], Any] | None = None,
         temporary: bool = False,
         env: dict[str, str] | None = None,
+        version: str | None = None,
         package_name: str | None = None,
     ):
         """
@@ -658,6 +662,9 @@ class PipWithSetuptoolsScm(Pip):
         env  : dict[str, str], optional
             A dictionary of environment variables which are overridden in the
             virtual environment, by default None
+        version : str | None, optional
+            The version to use for setuptools-scm. If None, will attempt to extract
+            version from the revision name by removing common prefixes like 'v'.
         package_name : str | None, optional
             The package name for setuptools-scm. If provided, will use package-specific
             environment variable. If None, uses generic fallback.
@@ -666,14 +673,31 @@ class PipWithSetuptoolsScm(Pip):
         # Start with provided environment variables
         enhanced_env = env.copy() if env else {}
 
-        # Add setuptools-scm environment variables
-        scm_env = create_setuptools_scm_env(name, package_name)
-        if scm_env:
-            logger.info(
-                "Adding setuptools-scm environment variables for version detection: %s",
-                list(scm_env.keys())
-            )
-            enhanced_env.update(scm_env)
+        # Determine version to use
+        scm_version = version
+        if scm_version is None:
+            # Simple version extraction: remove common prefixes
+            scm_version = name
+            for prefix in ['version-', 'release-', 'rel-', 'v']:
+                if scm_version.lower().startswith(prefix.lower()):
+                    scm_version = scm_version[len(prefix):]
+                    break
+
+        # Set setuptools-scm environment variable
+        if package_name:
+            # Use package-specific environment variable
+            normalized_name = package_name.upper().replace("-", "_").replace(".", "_")
+            env_var = f"SETUPTOOLS_SCM_PRETEND_VERSION_FOR_{normalized_name}"
+        else:
+            # Use generic environment variable
+            env_var = "SETUPTOOLS_SCM_PRETEND_VERSION"
+
+        enhanced_env[env_var] = scm_version
+        logger.info(
+            "Setting setuptools-scm environment variable: %s=%s",
+            env_var,
+            scm_version
+        )
 
         # Call parent constructor with enhanced environment
         super().__init__(
