@@ -22,12 +22,22 @@ from venv import EnvBuilder
 
 from sphinx_polyversion.builder import BuildError
 from sphinx_polyversion.environment import Environment
+from sphinx_polyversion.setuptools_scm_support import create_setuptools_scm_env
 from sphinx_polyversion.utils import to_thread
 
 if TYPE_CHECKING:
     from typing_extensions import Self
 
 logger = getLogger(__name__)
+
+__all__ = [
+    "Pip",
+    "PipWithSetuptoolsScm",
+    "Poetry",
+    "VenvWrapper",
+    "VirtualPythonEnvironment",
+    "VirtualenvWrapper",
+]
 
 
 class VenvWrapper(EnvBuilder):
@@ -576,3 +586,102 @@ class Pip(VirtualPythonEnvironment):
                 cast(int, process.returncode), " ".join(cmd), out, err
             )
         return self
+
+
+class PipWithSetuptoolsScm(Pip):
+    """
+    Build Environment for using a venv and installing deps with pip, with setuptools-scm support.
+
+    This class extends the regular Pip environment to provide automatic setuptools-scm
+    compatibility by setting appropriate environment variables when the revision name
+    looks like a version tag.
+
+    Use this instead of the regular Pip class when building projects that use setuptools-scm
+    for version detection.
+
+    Parameters
+    ----------
+    path : Path
+        The path of the current revision.
+    name : str
+        The name of the environment (usually the name of the revision).
+    venv : Path
+        The path of the python venv.
+    args : Iterable[str]
+        The cmd arguments to pass to `pip install`.
+    creator : Callable[[Path], Any] | None, optional
+        A callable for creating the venv, by default None
+    temporary   : bool, optional
+        A flag to specify whether the environment should be created in the
+        temporary directory, by default False. If this is True, `creator`
+        must not be None and `venv` will be treated relative to `path`.
+    env  : dict[str, str], optional
+        A dictionary of environment variables which are overridden in the
+        virtual environment, by default None
+    package_name : str | None, optional
+        The package name for setuptools-scm. If provided, will use package-specific
+        environment variable. If None, uses generic fallback.
+
+    """
+
+    def __init__(
+        self,
+        path: Path,
+        name: str,
+        venv: str | Path,
+        *,
+        args: Iterable[str],
+        creator: Callable[[Path], Any] | None = None,
+        temporary: bool = False,
+        env: dict[str, str] | None = None,
+        package_name: str | None = None,
+    ):
+        """
+        Build Environment for using a venv and pip with setuptools-scm support.
+
+        Parameters
+        ----------
+        path : Path
+            The path of the current revision.
+        name : str
+            The name of the environment (usually the name of the revision).
+        venv : Path
+            The path of the python venv.
+        args : Iterable[str]
+            The cmd arguments to pass to `pip install`.
+        creator : Callable[[Path], Any], optional
+            A callable for creating the venv, by default None
+        temporary   : bool, optional
+            A flag to specify whether the environment should be created in the
+            temporary directory, by default False. If this is True, `creator`
+            must not be None and `venv` will be treated relative to `path`.
+        env  : dict[str, str], optional
+            A dictionary of environment variables which are overridden in the
+            virtual environment, by default None
+        package_name : str | None, optional
+            The package name for setuptools-scm. If provided, will use package-specific
+            environment variable. If None, uses generic fallback.
+
+        """
+        # Start with provided environment variables
+        enhanced_env = env.copy() if env else {}
+
+        # Add setuptools-scm environment variables
+        scm_env = create_setuptools_scm_env(name, package_name)
+        if scm_env:
+            logger.info(
+                "Adding setuptools-scm environment variables for version detection: %s",
+                list(scm_env.keys())
+            )
+            enhanced_env.update(scm_env)
+
+        # Call parent constructor with enhanced environment
+        super().__init__(
+            path=path,
+            name=name,
+            venv=venv,
+            args=args,
+            creator=creator,
+            temporary=temporary,
+            env=enhanced_env,
+        )

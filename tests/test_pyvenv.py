@@ -7,6 +7,7 @@ import pytest
 
 from sphinx_polyversion.pyvenv import (
     Pip,
+    PipWithSetuptoolsScm,
     Poetry,
     VenvWrapper,
     VirtualenvWrapper,
@@ -564,3 +565,64 @@ class TestPoetry:
                     stdout=asyncio.subprocess.PIPE,
                 )
                 assert rc == 0
+
+
+class TestPipWithSetuptoolsScm:
+    """Test the `PipWithSetuptoolsScm` environment."""
+
+    def test_env_variables_created_for_version_ref(self, tmp_path: Path):
+        """Test that setuptools-scm environment variables are created for version refs."""
+        # Test with version tag
+        env = PipWithSetuptoolsScm(
+            tmp_path, "v1.2.3", "venv", args=["--no-deps"]
+        )
+        assert "SETUPTOOLS_SCM_PRETEND_VERSION" in env.env
+        assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION"] == "1.2.3"
+
+    def test_env_variables_with_package_name(self, tmp_path: Path):
+        """Test that package-specific environment variables are created."""
+        env = PipWithSetuptoolsScm(
+            tmp_path, "v1.2.3", "venv", args=["--no-deps"], package_name="mypackage"
+        )
+        assert "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MYPACKAGE" in env.env
+        assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MYPACKAGE"] == "1.2.3"
+
+    def test_no_env_variables_for_non_version_ref(self, tmp_path: Path):
+        """Test that no environment variables are created for non-version refs."""
+        env = PipWithSetuptoolsScm(
+            tmp_path, "main", "venv", args=["--no-deps"]
+        )
+        # Should only have user-provided env vars, no setuptools-scm vars
+        scm_vars = [k for k in env.env.keys() if k.startswith("SETUPTOOLS_SCM_")]
+        assert len(scm_vars) == 0
+
+    def test_env_variables_merged_with_user_env(self, tmp_path: Path):
+        """Test that setuptools-scm env vars are merged with user-provided env vars."""
+        user_env = {"USER_VAR": "user_value", "PATH": "/custom/path"}
+        env = PipWithSetuptoolsScm(
+            tmp_path, "v1.2.3", "venv", args=["--no-deps"], env=user_env
+        )
+        
+        # Should contain both user vars and setuptools-scm vars
+        assert "USER_VAR" in env.env
+        assert env.env["USER_VAR"] == "user_value"
+        assert "PATH" in env.env
+        assert env.env["PATH"] == "/custom/path"
+        assert "SETUPTOOLS_SCM_PRETEND_VERSION" in env.env
+        assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION"] == "1.2.3"
+
+    def test_complex_version_extraction(self, tmp_path: Path):
+        """Test that complex version strings are handled correctly."""
+        env = PipWithSetuptoolsScm(
+            tmp_path, "release-2.1.0-alpha1", "venv", args=["--no-deps"]
+        )
+        assert "SETUPTOOLS_SCM_PRETEND_VERSION" in env.env
+        assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION"] == "2.1.0-alpha1"
+
+    def test_package_name_normalization(self, tmp_path: Path):
+        """Test that package names are properly normalized."""
+        env = PipWithSetuptoolsScm(
+            tmp_path, "v1.2.3", "venv", args=["--no-deps"], package_name="my-package.name"
+        )
+        assert "SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MY_PACKAGE_NAME" in env.env
+        assert env.env["SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MY_PACKAGE_NAME"] == "1.2.3"
