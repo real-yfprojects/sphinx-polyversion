@@ -25,13 +25,16 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python     = ">=3.8"
-virtualenv = { version = ">=20", optional = true }
-jinja2     = { version = ">=3", optional = true }
+python         = ">=3.8"
+virtualenv     = { version = ">=20", optional = true }
+jinja2         = { version = ">=3", optional = true }
+setuptools_scm = { version = ">=9.2.0", optional = true }
+packaging      = { version = ">=25.0", optional = true }
 
 [tool.poetry.extras]
-virtualenv = ["virtualenv"]
-jinja      = ["jinja2"]
+virtualenv     = ["virtualenv"]
+jinja          = ["jinja2"]
+setuptools_scm = ["setuptools_scm", "packaging"]
 
 [tool.poetry.scripts]
 sphinx-polyversion = "sphinx_polyversion.main:main"
