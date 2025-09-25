@@ -59,6 +59,14 @@ extensions = [
 ]
 
 autosummary_ignore_module_all = False
+
+# Ensure optional extras that may not be installed don't break autodoc import of
+# their corresponding integration modules. This allows documenting the
+# `sphinx_polyversion.setuptools_scm` module without having the extra installed.
+autodoc_mock_imports = [
+    "setuptools_scm",
+    "jinja2",
+]
 autodoc_default_options = {
     "members": True,
     "show-inheritance": True,

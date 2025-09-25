@@ -9,14 +9,15 @@ Public API
     :recursive:
 
     api
-    builder
     driver
+    builder
+    vcs
     environment
     git
+    pyvenv
+    sphinx
+    setuptools_scm
     json
     log
     main
-    pyvenv
-    sphinx
     utils
-    vcs
