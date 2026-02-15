@@ -6,8 +6,8 @@ import asyncio
 import enum
 import re
 import shutil
-import tarfile
 import tempfile
+import uuid
 from asyncio.subprocess import PIPE
 from datetime import datetime
 from functools import total_ordering
@@ -186,11 +186,42 @@ async def _get_all_refs(
             yield ref
 
 
-async def _copy_tree(
-    repo: Path, ref: str, dest: str | Path, buffer_size: int = 0
-) -> None:
+async def _init_submodules(repo: Path) -> None:
+    """
+    Initialize and update git submodules in the given repo.
+
+    This clones missing submodule repositories and checks out the commit
+    pinned by the current HEAD. Failures are logged but not raised, since
+    individual submodules may be unreachable while others succeed.
+
+    Parameters
+    ----------
+    repo : Path
+        The git repository.
+
+    """
+    logger.info("Initializing git submodules in %s", repo)
+    cmd = ("git", "submodule", "update", "--init", "--recursive")
+    process = await asyncio.create_subprocess_exec(
+        *cmd, cwd=repo, stdout=DEVNULL, stderr=PIPE
+    )
+    _, err = await process.communicate()
+    if process.returncode:
+        logger.warning(
+            "git submodule update --init failed in %s (rc=%d): %s",
+            repo,
+            process.returncode,
+            err.decode().strip() if err else "",
+        )
+
+
+async def _copy_tree(repo: Path, ref: str, dest: str | Path) -> None:
     """
     Copy the contents of a ref into a location in the file system.
+
+    Creates a temporary git worktree at the target ref and uses
+    ``git submodule update --init --recursive`` to let Git resolve
+    submodule URLs (including relative ones) natively.
 
     Parameters
     ----------
@@ -200,9 +231,6 @@ async def _copy_tree(
         The ref
     dest : Union[str, Path]
         The destination to copy the contents to
-    buffer_size : int
-        The buffer size in memory which is filled before
-        a temporary file is used for retrieving the contents. Defaults to 0.
 
     Raises
     ------
@@ -210,20 +238,53 @@ async def _copy_tree(
         The git process exited with an error.
 
     """
-    # retrieve commit contents as tar archive
-    # NOTE: doesn't support git submodules
-    cmd = ("git", "archive", "--format", "tar", ref)
-    with tempfile.SpooledTemporaryFile(max_size=buffer_size) as f:
-        process = await asyncio.create_subprocess_exec(
-            *cmd, cwd=repo, stdout=f, stderr=PIPE
+    with tempfile.TemporaryDirectory() as tmp:
+        wt_path = Path(tmp) / f"wt-{uuid.uuid4().hex}"
+
+        # Create a detached worktree at the target ref
+        cmd: tuple[str, ...] = (
+            "git",
+            "worktree",
+            "add",
+            "--detach",
+            str(wt_path),
+            ref,
         )
-        out, err = await process.communicate()
-        if process.returncode:
-            raise CalledProcessError(process.returncode, " ".join(cmd), stderr=err)
-        # extract tar archive to dir
-        f.seek(0)
-        with tarfile.open(fileobj=f) as tf:
-            tf.extractall(str(dest))
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, cwd=repo, stdout=DEVNULL, stderr=PIPE
+        )
+        _, err = await proc.communicate()
+        if proc.returncode:
+            raise CalledProcessError(proc.returncode, " ".join(cmd), stderr=err)
+
+        try:
+            # Let git initialize all submodules recursively
+            # (handles relative URLs via the superproject remote)
+            cmd = ("git", "submodule", "update", "--init", "--recursive")
+            proc = await asyncio.create_subprocess_exec(
+                *cmd, cwd=wt_path, stdout=DEVNULL, stderr=PIPE
+            )
+            _, err = await proc.communicate()
+            if proc.returncode:
+                logger.warning(
+                    "git submodule update --init --recursive failed: %s",
+                    err.decode().strip() if err else "",
+                )
+
+            # Copy worktree contents to dest, excluding .git dirs
+            shutil.copytree(
+                wt_path,
+                dest,
+                ignore=shutil.ignore_patterns(".git"),
+                dirs_exist_ok=True,
+                symlinks=True,
+            )
+        finally:
+            rm_cmd = ("git", "worktree", "remove", "--force", str(wt_path))
+            proc = await asyncio.create_subprocess_exec(
+                *rm_cmd, cwd=repo, stdout=DEVNULL, stderr=DEVNULL
+            )
+            await proc.communicate()
 
 
 async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
@@ -261,37 +322,133 @@ async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
     return rc == 0
 
 
-async def _get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
+async def _collect_ignored_for(root: Path) -> set[Path]:
     """
-    List all unignored files in the directory.
-
-    This uses git to retrieve all tracked and untracked files but excludes
-    files ignored e.g. by `.gitignore`.
+    Collect git-ignored paths for a single repository root.
 
     Parameters
     ----------
-    directory : Path
-        Any directory in the repo.
+    root : Path
+        The git repository or submodule root.
 
     Returns
     -------
-    AsyncGenerator[Path, None]
-        The paths to all un-ignored files in the directory (recursive)
+    set[Path]
+        Absolute paths of ignored files and directories.
 
     """
     cmd = (
         "git",
         "ls-files",
-        "--cached",
-        "--others",
+        "-z",
+        "--ignored",
         "--exclude-standard",
+        "--others",
+        "--directory",
+        "--no-empty-directory",
     )
-    process = await asyncio.create_subprocess_exec(*cmd, cwd=directory, stdout=PIPE)
-    while line := await process.stdout.readline():  # type: ignore[union-attr]
-        yield Path(line.strip().decode())
-    await process.wait()
-    if process.returncode:
-        raise CalledProcessError(process.returncode, " ".join(cmd))
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd=root,
+        stdout=PIPE,
+        stderr=PIPE,
+    )
+    out, err = await proc.communicate()
+    if proc.returncode:
+        raise CalledProcessError(proc.returncode, " ".join(cmd), stderr=err)
+    ignored: set[Path] = set()
+    if out:
+        for entry in out.decode().split("\0"):
+            if entry:
+                ignored.add(root / entry.rstrip("/"))
+    return ignored
+
+
+async def _get_submodule_paths(repo: Path) -> list[Path]:
+    """
+    Return paths of initialized submodules (recursive).
+
+    Parameters
+    ----------
+    repo : Path
+        The git repository.
+
+    Returns
+    -------
+    list[Path]
+        Absolute paths of initialized submodule directories.
+
+    """
+    cmd = ("git", "submodule", "status", "--recursive")
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd=repo,
+        stdout=PIPE,
+        stderr=DEVNULL,
+    )
+    out, err = await proc.communicate()
+    if proc.returncode:
+        raise CalledProcessError(proc.returncode, " ".join(cmd), stderr=err)
+    paths: list[Path] = []
+    if out:
+        for line in out.decode().splitlines():
+            # format: " <sha> <path> (<desc>)" or "-<sha> <path>" (not init'd)
+            parts = line.strip().split()
+            if len(parts) >= 2 and not parts[0].startswith("-"):  # noqa: PLR2004
+                sub_path = repo / parts[1]
+                if sub_path.is_dir():
+                    paths.append(sub_path)
+    return paths
+
+
+async def _collect_ignored(repo: Path) -> set[Path]:
+    """
+    Pre-compute all git-ignored paths for a repo and its submodules.
+
+    Returns absolute paths.  Directories are included (without trailing
+    slash) so that :func:`_make_copytree_filter` can prune them early.
+
+    Parameters
+    ----------
+    repo : Path
+        The git repository.
+
+    Returns
+    -------
+    set[Path]
+        Absolute paths of ignored files and directories.
+
+    """
+    ignored = await _collect_ignored_for(repo)
+    for sub_path in await _get_submodule_paths(repo):
+        ignored.update(await _collect_ignored_for(sub_path))
+
+    return ignored
+
+
+def _make_copytree_filter(
+    ignored: set[Path],
+) -> Callable[[str, list[str]], set[str]]:
+    """
+    Return an ignore callback for :func:`shutil.copytree`.
+
+    Parameters
+    ----------
+    ignored : set[Path]
+        Absolute paths of files/directories to skip.
+
+    Returns
+    -------
+    Callable[[str, list[str]], set[str]]
+        An ignore function suitable for ``shutil.copytree(ignore=...)``.
+
+    """
+
+    def ignore(directory: str, entries: list[str]) -> set[str]:
+        dir_path = Path(directory)
+        return {e for e in entries if e == ".git" or dir_path / e in ignored}
+
+    return ignore
 
 
 # -- VersionProvider API -----------------------------------------------------
@@ -436,10 +593,6 @@ class Git(VersionProvider[GitRef]):
     """
     Provide versions from git repository.
 
-    .. warning::
-
-        Currently git submodules aren't supported. Feel free to open an issue!
-
     Parameters
     ----------
     branch_regex : str | re.Pattern
@@ -458,12 +611,10 @@ class Git(VersionProvider[GitRef]):
         remote: str | None = None,
         *,
         predicate: Callable[[Path, GitRef], bool | Awaitable[bool]] | None = None,
-        buffer_size: int = 0,
     ) -> None:
         """Init."""
         super().__init__()
         self.remote = remote
-        self.buffer_size = buffer_size
 
         if isinstance(branch_regex, str):
             branch_regex = re.compile(branch_regex)
@@ -546,7 +697,7 @@ class Git(VersionProvider[GitRef]):
             The revision to extract.
 
         """
-        await _copy_tree(root, revision.obj, dest, self.buffer_size)
+        await _copy_tree(root, revision.obj, dest)
 
     async def checkout_local(self, root: Path, dest: Path) -> None:
         """
@@ -554,6 +705,10 @@ class Git(VersionProvider[GitRef]):
 
         This doesn't copy files ignored by `git` if possible.
         Otherwise all files are copied as a fallback.
+
+        .. warning::
+            This may alter the user's working tree
+            by calling ``git submodule update --init``.
 
         Parameters
         ----------
@@ -563,19 +718,23 @@ class Git(VersionProvider[GitRef]):
             The destination to extract the revision to.
 
         """
+        await _init_submodules(root)
         try:
-            # NOTE: doesn't support git submodules
-            async for file in _get_unignored_files(root):
-                source = root / file
-                target = dest / file
-                target.parent.mkdir(parents=True, exist_ok=True)
-                assert source.exists()
-                shutil.copy2(source, target, follow_symlinks=False)
+            ignored = await _collect_ignored(root)
         except CalledProcessError:
             logger.warning(
-                "Could not list un-ignored files using git. Copying full working directory..."
+                "Could not determine ignored files using git. "
+                "Copying full working directory..."
             )
             shutil.copytree(root, dest, symlinks=True, dirs_exist_ok=True)
+            return
+        shutil.copytree(
+            root,
+            dest,
+            ignore=_make_copytree_filter(ignored),
+            symlinks=True,
+            dirs_exist_ok=True,
+        )
 
     async def predicate(self, root: Path, ref: GitRef) -> bool:
         """
