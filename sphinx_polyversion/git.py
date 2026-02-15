@@ -186,11 +186,65 @@ async def _get_all_refs(
             yield ref
 
 
+async def _init_submodules(repo: Path) -> None:
+    """
+    Initialize git submodules in the given repo.
+
+    Parameters
+    ----------
+    repo : Path
+        The git repository.
+
+    Raises
+    ------
+    CalledProcessError
+        The git process exited with an error.
+
+    """
+    logger.debug("Initializing git submodules in %s", repo)
+    cmd = ("git", "submodule", "init")
+    process = await asyncio.create_subprocess_exec(*cmd, cwd=repo, stderr=PIPE)
+    out, err = await process.communicate()
+    if process.returncode:
+        raise CalledProcessError(process.returncode, " ".join(cmd), stderr=err)
+
+
+async def _fetch_ref(repo: Path, ref: str) -> None:
+    """
+    Fetch a ref from origin if it is not available locally.
+
+    Parameters
+    ----------
+    repo : Path
+        The git repository.
+    ref : str
+        The ref to fetch.
+
+    """
+    # check whether commit is present locally
+    cmd: tuple[str, ...] = ("git", "rev-parse", "--verify", ref)
+    process = await asyncio.create_subprocess_exec(*cmd, cwd=repo)
+    _ = await process.communicate()
+
+    # download ref if not present locally
+    if process.returncode:
+        logger.debug("Local ref not found, fetching from remote")
+        cmd = ("git", "fetch", "--no-tags", "origin", ref)
+        process = await asyncio.create_subprocess_exec(*cmd, cwd=repo, stderr=PIPE)
+        out, err = await process.communicate()
+        if process.returncode:
+            raise CalledProcessError(process.returncode, " ".join(cmd), stderr=err)
+
+
 async def _copy_tree(
     repo: Path, ref: str, dest: str | Path, buffer_size: int = 0
 ) -> None:
     """
     Copy the contents of a ref into a location in the file system.
+
+    ..warning::
+        This doesn't recurse into git submodules.
+        Use :func:`_copy_tree_rec` for that.
 
     Parameters
     ----------
@@ -210,8 +264,7 @@ async def _copy_tree(
         The git process exited with an error.
 
     """
-    # retrieve commit contents as tar archive
-    # NOTE: doesn't support git submodules
+    logger.debug("Retrieving contents of ref %s in %s", ref, repo)
     cmd = ("git", "archive", "--format", "tar", ref)
     with tempfile.SpooledTemporaryFile(max_size=buffer_size) as f:
         process = await asyncio.create_subprocess_exec(
@@ -224,6 +277,104 @@ async def _copy_tree(
         f.seek(0)
         with tarfile.open(fileobj=f) as tf:
             tf.extractall(str(dest))
+
+
+async def _copy_tree_rec(
+    repo: Path, ref: str, dest: str | Path, buffer_size: int = 0, fetch: bool = False
+) -> None:
+    """
+    Copy the contents of a ref into a location in the file system.
+
+    Recurse into git submodules. If a submodule ref is not available locally,
+    it will be fetched from the remote `origin`.
+
+    ..sealso::
+        :func:`_copy_tree` for a non-recursive version
+        that doesn't handle submodules.
+
+    Parameters
+    ----------
+    repo : Path
+        The repo of the ref
+    ref : str
+        The ref
+    dest : Union[str, Path]
+        The destination to copy the contents to
+    buffer_size : int
+        The buffer size in memory which is filled before
+        a temporary file is used for retrieving the contents. Defaults to 0.
+    fetch : bool
+        Whether to fetch the ref from origin if it is not available locally.
+        This is used by recursive calls for submodules. Defaults to False.
+
+    Raises
+    ------
+    CalledProcessError
+        The git process exited with an error.
+
+    """
+    if fetch:
+        await _fetch_ref(repo, ref)
+
+    # ensure submodules are initialized
+    await _init_submodules(repo)
+
+    # retrieve git submodules entry points and refs
+    # Use default ls-tree output to maintain compatibility with older git versions.
+    # Default entry format per NUL-delimited line:
+    #   <mode> <type> <object>\t<path>[]
+    # For submodules: mode=160000, type=commit, object=<commit-sha>
+    # TODO: support file lists larger than buffer_size by using a temporary file for output
+    cmd = (
+        "git",
+        "ls-tree",
+        "-r",
+        "-z",
+        ref,
+    )
+    process = await asyncio.create_subprocess_exec(
+        *cmd, cwd=repo, stdout=PIPE, stderr=PIPE
+    )
+    out, err = await process.communicate()
+    if process.returncode:
+        raise CalledProcessError(process.returncode, " ".join(cmd), stderr=err)
+    lines = out.decode().split("\0")
+    submodules = {}
+    for line in lines:
+        if not line.strip():
+            continue
+        meta, path = line.strip().split("\t", 1)
+        parts = meta.strip().split()
+        # Expect: mode type object
+        if len(parts) < 3:  # noqa: PLR2004
+            logger.warning("Unexpected ls-tree entry: %s", line)
+            continue
+        mode, _type, obj = parts[0], parts[1], parts[2]
+        if mode == "160000":  # gitlink -> submodule
+            submodules[Path(path)] = obj
+
+    # retrieve commit contents of root repo as a tar archive
+    await _copy_tree(repo, ref, dest, buffer_size)
+
+    # recursive call into each submodule but allow fetching from remote repos
+    for submodule, sub_ref in submodules.items():
+        sub_repo = repo / submodule
+        if not sub_repo.exists():
+            logger.warning("Submodule %s not initialized in repo %s", submodule, repo)
+            continue
+        # verify submodule folder is a standalone git repo; if not, skip gracefully
+        if not (sub_repo / ".git").exists():
+            logger.warning(
+                "Submodule %s not a standalone git repository in %s; skipping",
+                submodule,
+                repo,
+            )
+            continue
+        sub_dest = Path(dest) / submodule
+        sub_dest.mkdir(parents=True, exist_ok=True)
+        await _copy_tree_rec(
+            sub_repo, sub_ref, sub_dest, buffer_size=buffer_size, fetch=True
+        )
 
 
 async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
@@ -261,7 +412,7 @@ async def file_exists(repo: Path, ref: GitRef, file: PurePath) -> bool:
     return rc == 0
 
 
-async def _get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
+async def _get_unignored_files(repo: Path) -> AsyncGenerator[Path, None]:
     """
     List all unignored files in the directory.
 
@@ -270,8 +421,13 @@ async def _get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
 
     Parameters
     ----------
-    directory : Path
-        Any directory in the repo.
+    repo : Path
+        The git repository.
+
+    Raises
+    ------
+    CalledProcessError
+        The git process exited with an error.
 
     Returns
     -------
@@ -279,16 +435,47 @@ async def _get_unignored_files(directory: Path) -> AsyncGenerator[Path, None]:
         The paths to all un-ignored files in the directory (recursive)
 
     """
+    # ensure submodules are initialized
+    await _init_submodules(repo)
+
+    # list tracked files
     cmd = (
         "git",
         "ls-files",
+        "--stage",
         "--cached",
+    )
+    # output has format <mode> <obj> <stage>\t<path>
+    process = await asyncio.create_subprocess_exec(*cmd, cwd=repo, stdout=PIPE)
+    while line := await process.stdout.readline():  # type: ignore[union-attr]
+        meta, path_str = line.strip().decode().split("\t", 1)
+        mode, _ = meta.strip().split(" ", 1)
+        path = Path(path_str.strip())
+        if mode == "160000":  # gitlink -> submodule
+            # recursively list files in submodule if it exists/initialized
+            sub_path = repo / path
+            if not sub_path.exists():
+                logger.warning("Submodule %s not initialized in repo %s", path, repo)
+                continue
+            async for sub_file in _get_unignored_files(sub_path):
+                yield path / sub_file
+        else:
+            yield path
+    await process.wait()
+    if process.returncode:
+        raise CalledProcessError(process.returncode, " ".join(cmd))
+
+    # lits untracked and un-ignored files
+    cmd = (
+        "git",
+        "ls-files",
         "--others",
         "--exclude-standard",
     )
-    process = await asyncio.create_subprocess_exec(*cmd, cwd=directory, stdout=PIPE)
+    process = await asyncio.create_subprocess_exec(*cmd, cwd=repo, stdout=PIPE)
     while line := await process.stdout.readline():  # type: ignore[union-attr]
-        yield Path(line.strip().decode())
+        path_str = line.strip().decode()
+        yield Path(path_str)
     await process.wait()
     if process.returncode:
         raise CalledProcessError(process.returncode, " ".join(cmd))
@@ -436,10 +623,6 @@ class Git(VersionProvider[GitRef]):
     """
     Provide versions from git repository.
 
-    .. warning::
-
-        Currently git submodules aren't supported. Feel free to open an issue!
-
     Parameters
     ----------
     branch_regex : str | re.Pattern
@@ -546,7 +729,7 @@ class Git(VersionProvider[GitRef]):
             The revision to extract.
 
         """
-        await _copy_tree(root, revision.obj, dest, self.buffer_size)
+        await _copy_tree_rec(root, revision.obj, dest, self.buffer_size)
 
     async def checkout_local(self, root: Path, dest: Path) -> None:
         """
@@ -564,7 +747,6 @@ class Git(VersionProvider[GitRef]):
 
         """
         try:
-            # NOTE: doesn't support git submodules
             async for file in _get_unignored_files(root):
                 source = root / file
                 target = dest / file
