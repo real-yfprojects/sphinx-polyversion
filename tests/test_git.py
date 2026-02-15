@@ -14,6 +14,7 @@ from sphinx_polyversion.git import (
     Git,
     GitRef,
     GitRefType,
+    _parse_ref,
     closest_tag,
     file_exists,
     file_predicate,
@@ -327,3 +328,15 @@ async def test_file_predicate(git_testrepo: Tuple[Path, List[GitRef]]):
     assert len(refs) == 4
     for i in range(4):
         assert compare_refs(refs[i], git_refs[i + 1])
+
+
+def test_parse_remote_ref():
+    """Test that `_parse_ref` parses remote branch refs correctly."""
+    line = "0123456789abcdef\trefs/remotes/origin/feature\t2023-08-29 19:45:09 +0000"
+    ref = _parse_ref(line)
+    assert ref is not None
+    assert ref.name == "feature"
+    assert ref.remote == "origin"
+    assert ref.type_ == GitRefType.BRANCH
+    assert ref.obj == "0123456789abcdef"
+    assert ref.ref == "refs/remotes/origin/feature"

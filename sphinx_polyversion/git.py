@@ -64,7 +64,7 @@ async def _get_git_root(directory: Path) -> Path:
     return Path(out.decode().rstrip("\n"))
 
 
-regex_ref = r"refs/(?P<type>\w+|remotes/(?P<remote>[^/]+))/(?P<name>\S+)"
+regex_ref = r"refs/(?P<type>remotes/(?P<remote>[^/]+)|\w+)/(?P<name>\S+)"
 pattern_ref = re.compile(regex_ref)
 
 GIT_FORMAT_STRING = "%(objectname)\t%(refname)\t%(creatordate:iso)"
