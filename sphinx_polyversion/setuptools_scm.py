@@ -26,7 +26,7 @@ async def version_for_ref(repo_path: str | Path, ref: str) -> Tuple[str, str] | 
 
     Calls `setuptools-scm` using the configuration in the `pyproject.toml`
     file. Alters the git describe command configured by appending
-    the given :paramref:`ref`.
+    the given :paramref:`~version_for_ref.ref`.
 
     .. warning::
 

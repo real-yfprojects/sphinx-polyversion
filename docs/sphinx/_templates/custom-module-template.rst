@@ -1,6 +1,7 @@
 {{ fullname | escape | underline}}
 
 .. automodule:: {{ fullname }}
+    :no-index:
 
     {% block attributes %}
     {% if attributes %}

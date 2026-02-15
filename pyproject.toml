@@ -64,6 +64,7 @@ sphinxext-opengraph              = { version = "^0.9.1", python = ">=3.9" }
 sphinx-autobuild                 = { version = "^2024.4.16", python = ">=3.9" }
 sphinx-design                    = { version = "^0.6", python = ">=3.9" }
 sphinx-codeautolink              = { version = "^0.17.4", python = ">=3.10" }
+sphinx-paramlinks                = { version = "^0.6.0", python = ">=3.9" }
 
 
 [tool.black]

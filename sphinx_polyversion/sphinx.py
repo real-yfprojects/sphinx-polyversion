@@ -42,7 +42,8 @@ class CommandBuilder(Builder[Environment, None]):
         To achieve more complex tasks like running multiple commands in sequence
         or further processing the placeholder values, you can pass a command
         invoking a custom script file which is the intended usage of
-        :paramref:`cmd`, :paramref:`pre_cmd` and :paramref:`post_cmd`.
+        :paramref:`~CommandBuilder.cmd`, :paramref:`~CommandBuilder.pre_cmd`
+        and :paramref:`~CommandBuilder.post_cmd`.
 
     Parameters
     ----------

@@ -1197,6 +1197,20 @@ doc = ["sphinx-autoapi", "sphinx-rtd-theme", "sphinx-tabs", "sphinxemoji"]
 test = ["tox"]
 
 [[package]]
+name = "sphinx-paramlinks"
+version = "0.6.0"
+description = "Allows param links in Sphinx function/method descriptions to be linkable"
+optional = false
+python-versions = "*"
+files = [
+    {file = "sphinx-paramlinks-0.6.0.tar.gz", hash = "sha256:746a0816860aa3fff5d8d746efcbec4deead421f152687411db1d613d29f915e"},
+]
+
+[package.dependencies]
+docutils = "*"
+Sphinx = ">=4.0.0"
+
+[[package]]
 name = "sphinx-rtd-theme"
 version = "3.0.2"
 description = "Read the Docs theme for Sphinx"
@@ -1649,4 +1663,4 @@ virtualenv = ["virtualenv"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8"
-content-hash = "75c9528bb6a3c880ef619a6aa16448d3a9780810ed7b785e6b4440cc11d7a37d"
+content-hash = "d82dcbd75bbcaffe1639eb341e20ee17578fb0b999d58818961ba69536563c69"

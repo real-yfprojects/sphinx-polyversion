@@ -46,6 +46,8 @@ extensions = [
     "sphinx.ext.napoleon",
     # in code blocks automatically link to the autodoc reference
     "sphinx_codeautolink",
+    # allows referencing parameters
+    "sphinx_paramlinks",
     # link references to source code
     "sphinx.ext.linkcode",
     # link shortcuts
