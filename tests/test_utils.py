@@ -1,6 +1,5 @@
 """Test the `utils` submodule."""
 
-import asyncio
 from pathlib import Path, PurePath
 from typing import TypeVar
 
@@ -28,25 +27,26 @@ def test_shift_path(anchor1, anchor2, path, solution):
 T = TypeVar("T")
 
 
-def test_async_all():
+@pytest.mark.asyncio
+async def test_async_all():
     """Test the `async_all` implementation."""
 
     async def future(value: T) -> T:
         return value
 
-    assert asyncio.run(async_all([]))
+    assert await async_all([])
 
     all_true = [future(True) for i in range(8)]
-    assert asyncio.run(async_all(all_true))
+    assert await async_all(all_true)
 
     all_false = [future(False) for i in range(8)]
-    assert not asyncio.run(async_all(all_false))
+    assert not await async_all(all_false)
 
     first_false = [future(False)] + [future(True) for i in range(8)]
-    assert not asyncio.run(async_all(first_false))
+    assert not await async_all(first_false)
 
     last_false = [future(True) for i in range(8)] + [future(False)]
-    assert not asyncio.run(async_all(last_false))
+    assert not await async_all(last_false)
 
     some_false = (
         [future(True) for i in range(5)]
@@ -55,7 +55,7 @@ def test_async_all():
         + [future(False)]
         + [future(True) for i in range(5)]
     )
-    assert not asyncio.run(async_all(some_false))
+    assert not await async_all(some_false)
 
 
 def test_import_file(tmp_path: Path):
