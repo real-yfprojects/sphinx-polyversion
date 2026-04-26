@@ -93,6 +93,7 @@
 - [ ] Easy integration with ci
 - [ ] Github Action
 - [ ] Read conf file location from pyproject.toml?
+- [ ] uv support
 
 # Wishlist
 
