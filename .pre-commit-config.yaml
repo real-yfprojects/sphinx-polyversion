@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: 2c9f875913ee60ca25ce70243dc24d5b6415598c # frozen: v4.6.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
     hooks:
       # check file system problems
       - id: check-case-conflict
@@ -24,15 +24,14 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/python-poetry/poetry
-    rev: "c85477da8a610a87133299f996f8d8a593aa7bff" # frozen: 1.8.0
+    rev: "811a12dae0fe81f199e3f1b88b8b8be9eed543c2" # frozen: 2.4.1
     hooks:
       - id: poetry-check
       - id: poetry-lock
-        args: ["--no-update"]
         files: ^pyproject\.toml|poetry\.lock$
 
   - repo: https://github.com/floatingpurr/sync_with_poetry
-    rev: 41b6bf233c52f08f344e09107bdda253e6d8b57a # frozen: 1.1.0
+    rev: 52de089cd9cb30e5c6ba8a2e8767773af1e53aab # frozen: 1.2.1
     hooks:
       - id: sync_with_poetry
         files: ^\.pre-commit-config\.yaml|poetry\.lock$
@@ -55,7 +54,7 @@ repos:
 
   # Lint python code with ruff (also sorts imports)
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "f0b5944bef86f50d875305821a0ab0d8c601e465" # frozen: v0.8.4
+    rev: "89c421dff2e1026ba12cdb9ebd731f4a83aa8021" # frozen: v0.8.6
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -68,7 +67,7 @@ repos:
 
   # Static type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: bbc3dc1f890007061f18f17e2334f216ea9e5df7 # frozen: v1.14.1
+    rev: fc0f09a29bb495f4a91f00266155d6282d52485d # frozen: v1.20.2
     hooks:
       - id: mypy
         exclude: ^(tests|docs)
@@ -76,13 +75,13 @@ repos:
 
   # format many other files with prettier
   - repo: "https://github.com/pycontribs/mirrors-prettier"
-    rev: b28ab1718b516827e9f6cdfbd3c4c9546489d53e # frozen: v3.3.2
+    rev: c79518d33a81b378af7b186e99e360a2c9b63223 # frozen: v3.6.2
     hooks:
       - id: prettier
         exclude: ^docs/(sphinx/_)templates/
 
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: bea368871c59605bf2471441d0c6214bd3b80c44 # frozen: v0.18
+    rev: 4b2e70d08cb2ccd26d1fba73588de41c7a5d50b7 # frozen: v0.25
     hooks:
       - id: validate-pyproject
         files: pyproject.toml$
