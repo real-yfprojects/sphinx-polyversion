@@ -57,7 +57,7 @@ jobs:
 
       # Configure pages provides deployment URL
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       # Prepare
       - name: Fetch tags and branches
