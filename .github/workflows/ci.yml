@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup
         id: setup
@@ -41,7 +41,7 @@ jobs:
       # Upload changed files on pre-commit error
       - name: Upload changed files
         if: ${{ failure() && steps.changed-files.outputs.files }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Files modified by pre-commit
           path: ${{ steps.changed-files.outputs.files }}
@@ -52,10 +52,10 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: setup python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -84,7 +84,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup
         id: setup
@@ -96,14 +96,14 @@ jobs:
         run: make test
 
       # Upload summary of test results
-      - uses: test-summary/action@31493c76ec9e7aa675f1585d3ed6f1da69269a86 # v2.4
+      - uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # v2.6
         if: failure() || success()
         with:
           paths: report.xml
 
       # Upload coverage to job summary
       - name: Summarize coverage
-        uses: livewing/lcov-job-summary@28126fb20073f4624d0f8e2c6f4afbe1c0670cbb # v1.2.0
+        uses: livewing/lcov-job-summary@f61677de6678fb6f860c8d1d35c5b4540b64b1d3 # v1.3.0
         if: matrix.extras == 'all' && (failure() || success())
         with:
           lcov: coverage.lcov
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup
         id: setup
@@ -126,7 +126,7 @@ jobs:
 
       # Upload build
       - name: Upload build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Docs
           path: docs/build
