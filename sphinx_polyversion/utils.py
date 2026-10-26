@@ -28,7 +28,8 @@ if TYPE_CHECKING:
     R = TypeVar("R")
 
 if sys.version_info >= (3, 9):
-    from asyncio import to_thread
+    # explicit re-export required by mypy
+    from asyncio import to_thread as to_thread  # noqa: PLC0414
 else:
 
     async def to_thread(

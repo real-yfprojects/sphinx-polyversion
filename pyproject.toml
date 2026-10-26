@@ -72,7 +72,7 @@ target-version = ['py38']
 
 [tool.mypy]
 files              = "sphinx_polyversion/**.py"
-python_version     = "3.8"
+python_version     = "3.9"
 strict             = true
 allow_redefinition = true
 exclude            = ["^(tests|docs)"]
@@ -80,6 +80,14 @@ exclude            = ["^(tests|docs)"]
 [[tool.mypy.overrides]]
 module                 = "virtualenv.*"
 ignore_missing_imports = true
+
+# Some dependencies (and their dependencies) use syntax newer than the
+# targeted python version, which mypy fails to parse.
+# - `pytest` is imported for typing only by `vcs_versioning` (`setuptools_scm`)
+# - `filelock` is a dependency of `virtualenv`
+[[tool.mypy.overrides]]
+module         = ["pytest.*", "_pytest.*", "filelock.*"]
+follow_imports = "skip"
 
 [tool.ruff]
 target-version = "py38"
